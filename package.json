@@ -1,9 +1,10 @@
 {
-  "name": "express-graphql",
+  "name": "@bluesialia/express-graphql",
   "version": "0.12.0",
   "description": "Production ready GraphQL HTTP middleware.",
+  "author": "Jorge Domínguez Arnáez (BlueSialia)",
   "license": "MIT",
-  "private": true,
+  "private": false,
   "main": "index.js",
   "types": "index.d.ts",
   "typesVersions": {
@@ -14,13 +15,13 @@
     }
   },
   "sideEffects": false,
-  "homepage": "https://github.com/graphql/express-graphql",
+  "homepage": "https://github.com/bluesialia/express-graphql",
   "bugs": {
-    "url": "https://github.com/graphql/express-graphql/issues"
+    "url": "https://github.com/bluesialia/express-graphql/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/graphql/express-graphql.git"
+    "url": "https://github.com/bluesialia/express-graphql.git"
   },
   "keywords": [
     "express",
