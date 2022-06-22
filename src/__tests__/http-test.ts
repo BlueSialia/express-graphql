@@ -1,8 +1,6 @@
 import zlib from 'zlib';
 
-import type { Server as Restify } from 'restify';
-import connect from 'connect';
-import express from 'express';
+import express, { Request, Response } from 'express';
 import supertest from 'supertest';
 import bodyParser from 'body-parser';
 
@@ -26,7 +24,7 @@ import {
 
 import { graphqlHTTP } from '../index';
 
-type Middleware = (req: any, res: any, next: () => void) => unknown;
+type Middleware = (req: Request, res: Response, next: () => void) => unknown;
 type Server = () => {
   request: () => supertest.SuperTest<supertest.Test>;
   use: (middleware: Middleware) => unknown;
@@ -80,58 +78,12 @@ function urlString(urlParams?: { [param: string]: string }): string {
   return string;
 }
 
-describe('GraphQL-HTTP tests for connect', () => {
-  runTests(() => {
-    const app = connect();
-
-    /* istanbul ignore next Error handler added only for debugging failed tests */
-    app.on('error', (error) => {
-      // eslint-disable-next-line no-console
-      console.warn('App encountered an error:', error);
-    });
-
-    return {
-      request: () => supertest(app),
-      use: app.use.bind(app),
-      // Connect only likes using app.use.
-      get: app.use.bind(app),
-      put: app.use.bind(app),
-      post: app.use.bind(app),
-    };
-  });
-});
-
 describe('GraphQL-HTTP tests for express', () => {
   runTests(() => {
     const app = express();
 
     // This ensures consistent tests, as express defaults json spacing to 0 only in "production" mode.
     app.set('json spaces', 0);
-
-    /* istanbul ignore next Error handler added only for debugging failed tests */
-    app.on('error', (error) => {
-      // eslint-disable-next-line no-console
-      console.warn('App encountered an error:', error);
-    });
-
-    return {
-      request: () => supertest(app),
-      use: app.use.bind(app),
-      get: app.get.bind(app),
-      put: app.put.bind(app),
-      post: app.post.bind(app),
-    };
-  });
-});
-
-describe('GraphQL-HTTP tests for restify', () => {
-  runTests(() => {
-    // We're lazily loading the restify module so as to avoid issues caused by it patching the
-    // native IncomingMessage and ServerResponse classes. See https://github.com/restify/node-restify/issues/1540
-    // Using require instead of import here to avoid using Promises.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports,node/global-require
-    const restify = require('restify');
-    const app: Restify = restify.createServer();
 
     /* istanbul ignore next Error handler added only for debugging failed tests */
     app.on('error', (error) => {
@@ -495,7 +447,7 @@ function runTests(server: Server) {
 
       // Middleware that adds req.foo to every request
       app.use((req, _res, next) => {
-        req.foo = 'bar';
+        (req as Request & { foo: string }).foo = 'bar';
         next();
       });
 
@@ -793,8 +745,11 @@ function runTests(server: Server) {
         })),
       );
 
-      const response = await app.request().post(urlString()).send({
-        query: `
+      const response = await app
+        .request()
+        .post(urlString())
+        .send({
+          query: `
             query helloYou { test(who: "You"), ...shared }
             query helloWorld { test(who: "World"), ...shared }
             query helloDolly { test(who: "Dolly"), ...shared }
@@ -802,8 +757,8 @@ function runTests(server: Server) {
               shared: test(who: "Everyone")
             }
           `,
-        operationName: 'helloWorld',
-      });
+          operationName: 'helloWorld',
+        });
 
       expect(JSON.parse(response.text)).to.deep.equal({
         data: {

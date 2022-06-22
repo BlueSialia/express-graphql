@@ -9,7 +9,7 @@ import { graphqlHTTP } from '../index';
 describe('Useful errors when incorrectly used', () => {
   it('requires an option factory function', () => {
     expect(() => {
-      // @ts-expect-error
+      // @ts-expect-error throw test
       graphqlHTTP();
     }).to.throw('GraphQL middleware requires options.');
   });
@@ -19,7 +19,7 @@ describe('Useful errors when incorrectly used', () => {
 
     app.use(
       '/graphql',
-      // @ts-expect-error
+      // @ts-expect-error 500 test
       graphqlHTTP(() => null),
     );
 
@@ -41,7 +41,7 @@ describe('Useful errors when incorrectly used', () => {
 
     app.use(
       '/graphql',
-      // @ts-expect-error
+      // @ts-expect-error 500 test
       graphqlHTTP(() => Promise.resolve(null)),
     );
 
@@ -63,7 +63,7 @@ describe('Useful errors when incorrectly used', () => {
 
     app.use(
       '/graphql',
-      // @ts-expect-error
+      // @ts-expect-error 500 test
       graphqlHTTP(() => ({})),
     );
 
@@ -82,7 +82,7 @@ describe('Useful errors when incorrectly used', () => {
 
     app.use(
       '/graphql',
-      // @ts-expect-error
+      // @ts-expect-error 500 test
       graphqlHTTP(() => Promise.resolve({})),
     );
 
@@ -97,7 +97,7 @@ describe('Useful errors when incorrectly used', () => {
   });
 
   it('validates schema before executing request', async () => {
-    // @ts-expect-error
+    // @ts-expect-error 500 test
     const schema = new GraphQLSchema({ directives: [null] });
 
     const app = express();
