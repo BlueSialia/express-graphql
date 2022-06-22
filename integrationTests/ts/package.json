@@ -4,9 +4,9 @@
     "test": "node test.js"
   },
   "dependencies": {
-    "@types/node": "14.0.13",
-    "express-graphql": "file:../express-graphql.tgz",
-    "graphql": "14.7.0",
+    "@bluesialia/express-graphql": "file:../express-graphql.tgz",
+    "@types/node": "~18.0.0",
+    "graphql": "~16.5.0",
     "typescript-3.4": "npm:typescript@3.4.x",
     "typescript-3.5": "npm:typescript@3.5.x",
     "typescript-3.6": "npm:typescript@3.6.x",

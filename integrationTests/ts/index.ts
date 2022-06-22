@@ -1,7 +1,7 @@
 import { buildSchema } from 'graphql';
 
 // eslint-disable-next-line import/no-unresolved, node/no-missing-import
-import { graphqlHTTP, RequestInfo } from 'express-graphql';
+import { graphqlHTTP, RequestInfo } from '@bluesialia/express-graphql';
 
 const schema = buildSchema('type Query { hello: String }');
 

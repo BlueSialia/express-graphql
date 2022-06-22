@@ -2,13 +2,14 @@
   "language": "en",
   "ignorePaths": [
     // Copied from '.gitignore', please keep it in sync.
-    ".eslintcache",
     "node_modules",
     "coverage",
     "npmDist",
 
     // Excluded from spelling check
+    ".eslintcache",
     "cspell.json",
+    "LICENSE",
     "package.json",
     "package-lock.json",
     "tsconfig.json"

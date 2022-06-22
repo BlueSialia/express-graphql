@@ -4,7 +4,7 @@ const assert = require('assert');
 
 const { buildSchema } = require('graphql');
 
-const { graphqlHTTP } = require('express-graphql');
+const { graphqlHTTP } = require('@bluesialia/express-graphql');
 
 const schema = buildSchema('type Query { hello: String }');
 
