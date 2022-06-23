@@ -197,8 +197,8 @@ add "&raw" to the end of the URL within a browser.
         let url = window.location.href;
         if('${typeof websocketClient}' == 'string' && '${websocketClient}' === 'v1') {
           client = window.graphqlWs.createClient({url: ${safeSerialize(
-    subscriptionEndpoint,
-  )} });
+            subscriptionEndpoint,
+          )} });
           return window.GraphiQL.createFetcher({url, wsClient: client});
         } else {
           let clientClass = window.SubscriptionsTransportWs.SubscriptionClient;

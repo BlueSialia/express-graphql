@@ -16,9 +16,16 @@ export default function (_program: ts.Program, _pluginOptions: {}) {
     return (sourceFile: ts.SourceFile) => {
       function visitor(node: ts.Node): ts.Node {
         if (ts.isCallExpression(node)) {
-          if (ts.isIdentifier(node.expression) && node.expression.text === 'loadFileStaticallyFromNPM'
+          if (
+            ts.isIdentifier(node.expression) &&
+            node.expression.text === 'loadFileStaticallyFromNPM'
           ) {
-            if (node.arguments[0] === undefined) throw new Error(`function loadFileStaticallyFromNPM requires 1 argument at ${sourceFile.fileName}: ${node.expression.getText()}`);
+            if (node.arguments[0] === undefined)
+              throw new Error(
+                `function loadFileStaticallyFromNPM requires 1 argument at ${
+                  sourceFile.fileName
+                }: ${node.expression.getText()}`,
+              );
             const npmPath = node.arguments[0].getText().replace(/'|"/g, '');
             // const filePath = require.resolve(npmPath); <-- ERR_PACKAGE_PATH_NOT_EXPORTED
             const filePath = path.join('node_modules', npmPath);

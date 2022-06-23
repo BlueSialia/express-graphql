@@ -18,8 +18,7 @@
     "importsNotUsedAsValues": "error",
     "newLine": "LF",
     "preserveConstEnums": true,
-    "plugins": [
-      { "transform": "./resources/customTransformation.ts" },
-  ]  },
+    "plugins": [{ "transform": "./resources/customTransformation.ts" }]
+  },
   "include": ["src"]
 }
