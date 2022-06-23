@@ -1,4 +1,3 @@
 # Copied from '.gitignore', please keep it in sync.
+/dist
 /node_modules
-/coverage
-/npmDist

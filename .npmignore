@@ -1,0 +1,9 @@
+/examples
+/integrationTests
+/resources
+/src
+*__tests__*
+*ignore*
+.*rc
+*.tgz
+*.json

@@ -35,7 +35,6 @@ export interface GraphiQLOptions {
 
   /**
    * websocket client option for subscription, defaults to v0
-   * v0: subscriptions-transport-ws
    * v1: graphql-ws
    */
   websocketClient?: string;
@@ -48,7 +47,9 @@ function safeSerialize(data: string | boolean | null | undefined): string {
     : 'undefined';
 }
 
-// Implemented as Babel transformation, see ../resources/load-statically-from-npm.js
+/**
+ * Compile time function. @See ./resources/customTransformation.ts
+ */
 declare function loadFileStaticallyFromNPM(npmPath: string): string;
 
 /**
@@ -76,36 +77,11 @@ export function renderGraphiQL(
 
   let subscriptionScripts = '';
   if (subscriptionEndpoint != null) {
-    if (websocketClient === 'v1') {
-      subscriptionScripts = `
-      <script>
-        ${loadFileStaticallyFromNPM('graphql-ws/umd/graphql-ws.js')}
-      </script>
-      <script>
-      ${loadFileStaticallyFromNPM(
-        'subscriptions-transport-ws/browser/client.js',
-      )}
-      </script>
-      `;
-    } else {
-      subscriptionScripts = `
-      <script>
-        ${loadFileStaticallyFromNPM(
-          'subscriptions-transport-ws/browser/client.js',
-        )}
-      </script>
-      <script>
-        ${loadFileStaticallyFromNPM(
-          'subscriptions-transport-ws/browser/client.js',
-        )}
-      </script>
-      <script>
-        ${loadFileStaticallyFromNPM(
-          'graphiql-subscriptions-fetcher/browser/client.js',
-        )}
-      </script>
-      `;
-    }
+    subscriptionScripts = `
+    <script>
+      ${loadFileStaticallyFromNPM('graphql-ws/umd/graphql-ws.js')}
+    </script>
+    `;
   }
 
   return `<!--
@@ -221,8 +197,8 @@ add "&raw" to the end of the URL within a browser.
         let url = window.location.href;
         if('${typeof websocketClient}' == 'string' && '${websocketClient}' === 'v1') {
           client = window.graphqlWs.createClient({url: ${safeSerialize(
-            subscriptionEndpoint,
-          )} });
+    subscriptionEndpoint,
+  )} });
           return window.GraphiQL.createFetcher({url, wsClient: client});
         } else {
           let clientClass = window.SubscriptionsTransportWs.SubscriptionClient;
