@@ -24,9 +24,8 @@
     "subcommand",
     "charsets",
     "downlevel",
-
-    // TODO: remove bellow words
-    "Graphi", // GraphiQL
-    "QL's" // GraphQL's
+    "Graphi",
+    "QL's",
+    "bluesialia"
   ]
 }

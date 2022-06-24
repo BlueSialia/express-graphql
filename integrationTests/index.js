@@ -17,10 +17,10 @@ function exec(command, options = {}) {
 
 describe('Integration Tests', () => {
   const tmpDir = path.join(os.tmpdir(), 'express-graphql-integrationTmp');
-  fs.rmdirSync(tmpDir, { recursive: true, force: true });
+  fs.rmSync(tmpDir, { recursive: true, force: true });
   fs.mkdirSync(tmpDir);
 
-  const distDir = path.resolve('./npmDist');
+  const distDir = path.resolve('.');
   const archiveName = exec(`npm --quiet pack ${distDir}`, { cwd: tmpDir });
   fs.renameSync(
     path.join(tmpDir, archiveName),

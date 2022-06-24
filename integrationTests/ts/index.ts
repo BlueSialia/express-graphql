@@ -1,7 +1,7 @@
 import { buildSchema } from 'graphql';
 
 // eslint-disable-next-line import/no-unresolved, node/no-missing-import
-import { graphqlHTTP, RequestInfo } from '@bluesialia/express-graphql';
+import { graphqlHTTP, Options, RequestInfo } from '@bluesialia/express-graphql';
 
 const schema = buildSchema('type Query { hello: String }');
 
@@ -23,14 +23,14 @@ graphqlHTTP({
   }),
 });
 
-graphqlHTTP((request) => ({
+graphqlHTTP((request: Options) => ({
   graphiql: true,
   schema,
   context: request.headers,
   validationRules,
 }));
 
-graphqlHTTP(async (request) => ({
+graphqlHTTP(async (request: Options) => ({
   graphiql: true,
   schema: await Promise.resolve(schema),
   context: request.headers,
