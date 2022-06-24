@@ -378,7 +378,7 @@ export function graphqlHTTP(options: Options): Middleware {
       } else {
         result = {
           data: undefined,
-          errors: error.graphqlErrors.map((error: any) =>
+          errors: error.graphqlErrors.map((error: Error) =>
             error instanceof GraphQLError
               ? error
               : new GraphQLError(error.message, {

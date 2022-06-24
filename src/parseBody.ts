@@ -56,12 +56,13 @@ export async function parseBody(
       }
       throw httpError(400, 'POST body sent invalid JSON.');
     case 'application/x-www-form-urlencoded':
-      const params = new URLSearchParams(rawBody);
-      const parsed: { [param: string]: unknown } = {};
-      params.forEach((value, name) => {
-        parsed[name] = value;
-      });
-      return parsed;
+      return Array.from(new URLSearchParams(rawBody).entries()).reduce(
+        (previous: { [param: string]: unknown }, current: [string, string]) => {
+          previous[current[0]] = current[1];
+          return previous;
+        },
+        {},
+      );
   }
 
   // If no Content-Type header matches, parse nothing.
