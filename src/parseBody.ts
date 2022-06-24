@@ -1,7 +1,6 @@
 import type { IncomingMessage } from 'http';
 import type { Inflate, Gunzip } from 'zlib';
 import zlib from 'zlib';
-import querystring from 'querystring';
 
 import getStream, { MaxBufferError } from 'get-stream';
 import httpError from 'http-errors';
@@ -57,7 +56,12 @@ export async function parseBody(
       }
       throw httpError(400, 'POST body sent invalid JSON.');
     case 'application/x-www-form-urlencoded':
-      return querystring.parse(rawBody);
+      const params = new URLSearchParams(rawBody);
+      const parsed: { [param: string]: unknown } = {};
+      params.forEach((value, name) => {
+        parsed[name] = value;
+      });
+      return parsed;
   }
 
   // If no Content-Type header matches, parse nothing.

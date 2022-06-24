@@ -19,7 +19,6 @@ import {
   parse,
   validate,
   execute,
-  formatError,
   validateSchema,
   getOperationAST,
   specifiedRules,
@@ -194,7 +193,9 @@ export function graphqlHTTP(options: Options): Middleware {
     let params: GraphQLParams | undefined;
     let showGraphiQL = false;
     let graphiqlOptions: GraphiQLOptions | undefined;
-    let formatErrorFn = formatError;
+    let formatErrorFn:
+      | ((error: GraphQLError) => GraphQLFormattedError)
+      | undefined;
     let pretty = false;
     let result: ExecutionResult;
 
@@ -370,17 +371,21 @@ export function graphqlHTTP(options: Options): Middleware {
       }
 
       if (error.graphqlErrors == null) {
-        const graphqlError = new GraphQLError(
-          error.message,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          error,
-        );
+        const graphqlError = new GraphQLError(error.message, {
+          originalError: error,
+        });
         result = { data: undefined, errors: [graphqlError] };
       } else {
-        result = { data: undefined, errors: error.graphqlErrors };
+        result = {
+          data: undefined,
+          errors: error.graphqlErrors.map((error: any) =>
+            error instanceof GraphQLError
+              ? error
+              : new GraphQLError(error.message, {
+                  originalError: error,
+                }),
+          ),
+        };
       }
     }
 
@@ -396,7 +401,10 @@ export function graphqlHTTP(options: Options): Middleware {
     // Format any encountered errors.
     const formattedResult: FormattedExecutionResult = {
       ...result,
-      errors: result.errors?.map(formatErrorFn),
+      errors:
+        formatErrorFn !== undefined
+          ? result.errors?.map(formatErrorFn)
+          : result.errors?.map((error) => error.toJSON()),
     };
 
     // If allowed to show GraphiQL, present it instead of JSON.
