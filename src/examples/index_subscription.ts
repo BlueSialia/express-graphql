@@ -18,10 +18,7 @@ app.use(
   graphqlHTTP({
     schema,
     rootValue,
-    graphiql: {
-      subscriptionEndpoint,
-      websocketClient: 'v1',
-    },
+    graphiql: { subscriptionEndpoint },
   }),
 );
 

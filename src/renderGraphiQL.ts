@@ -32,15 +32,11 @@ export interface GraphiQLOptions {
    * A websocket endpoint for subscription
    */
   subscriptionEndpoint?: string;
-
-  /**
-   * websocket client option for subscription, defaults to v0
-   * v1: graphql-ws
-   */
-  websocketClient?: string;
 }
 
-// Ensures string values are safe to be used within a <script> tag.
+/**
+ * Sanitizes values to be used within a <script> tag.
+ */
 function safeSerialize(data: string | boolean | null | undefined): string {
   return data != null
     ? JSON.stringify(data).replace(/\//g, '\\/')
@@ -73,11 +69,9 @@ export function renderGraphiQL(
   const headerEditorEnabled = options?.headerEditorEnabled;
   const shouldPersistHeaders = options?.shouldPersistHeaders;
   const subscriptionEndpoint = options?.subscriptionEndpoint;
-  const websocketClient = options?.websocketClient ?? 'v0';
-
-  let subscriptionScripts = '';
+  let subscriptionScript = '';
   if (subscriptionEndpoint != null) {
-    subscriptionScripts = `
+    subscriptionScript = `
     <script>
       ${loadFileStaticallyFromNPM('graphql-ws/umd/graphql-ws.js')}
     </script>
@@ -94,54 +88,54 @@ add "&raw" to the end of the URL within a browser.
 -->
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <title>GraphiQL</title>
-  <meta name="robots" content="noindex" />
-  <meta name="referrer" content="origin" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-    #graphiql {
-      height: 100vh;
-    }
-  </style>
-  <style>
-    /* graphiql/graphiql.css */
-    ${loadFileStaticallyFromNPM('graphiql/graphiql.css')}
-  </style>
-  <script>
-    // promise-polyfill/dist/polyfill.min.js
-    ${loadFileStaticallyFromNPM('promise-polyfill/dist/polyfill.min.js')}
-  </script>
-  <script>
-    // unfetch/dist/unfetch.umd.js
-    ${loadFileStaticallyFromNPM('unfetch/dist/unfetch.umd.js')}
-  </script>
-  <script>
-    // react/umd/react.production.min.js
-    ${loadFileStaticallyFromNPM('react/umd/react.production.min.js')}
-  </script>
-  <script>
-    // react-dom/umd/react-dom.production.min.js
-    ${loadFileStaticallyFromNPM('react-dom/umd/react-dom.production.min.js')}
-  </script>
-  <script>
-    // graphiql/graphiql.min.js
-    ${loadFileStaticallyFromNPM('graphiql/graphiql.min.js')}
-  </script>
-  ${subscriptionScripts}
-</head>
-<body>
-  <div id="graphiql">Loading...</div>
-  <script>
+  <head>
+    <title>GraphiQL</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+        overflow: hidden;
+      }
+      #graphiql {
+        height: 100vh;
+      }
+    </style>
+    <style>
+      /* graphiql/graphiql.css */
+      ${loadFileStaticallyFromNPM('graphiql/graphiql.min.css')}
+    </style>
+    <script>
+      // promise-polyfill/dist/polyfill.min.js
+      ${loadFileStaticallyFromNPM('promise-polyfill/dist/polyfill.min.js')}
+    </script>
+    <script>
+      // unfetch/dist/unfetch.umd.js
+      ${loadFileStaticallyFromNPM('unfetch/dist/unfetch.umd.js')}
+    </script>
+    <script>
+      // react/umd/react.production.min.js
+      ${loadFileStaticallyFromNPM('react/umd/react.production.min.js')}
+    </script>
+    <script>
+      // react-dom/umd/react-dom.production.min.js
+      ${loadFileStaticallyFromNPM('react-dom/umd/react-dom.production.min.js')}
+    </script>
+  </head>
+
+  <body>
+    <div id="graphiql">Loading...</div>
+    <script>
+      // graphiql/graphiql.min.js
+      ${loadFileStaticallyFromNPM('graphiql/graphiql.min.js')}
+    </script>
+    ${subscriptionScript}
+    <script>
     // Collect the URL parameters
-    var parameters = {};
+    const parameters = {};
     window.location.search.substr(1).split('&').forEach(function (entry) {
-      var eq = entry.indexOf('=');
+      const eq = entry.indexOf('=');
       if (eq >= 0) {
         parameters[decodeURIComponent(entry.slice(0, eq))] =
           decodeURIComponent(entry.slice(eq + 1));
@@ -158,99 +152,31 @@ add "&raw" to the end of the URL within a browser.
       }).join('&');
     }
 
-    // Derive a fetch URL from the current URL, sans the GraphQL parameters.
-    var graphqlParamNames = {
-      query: true,
-      variables: true,
-      operationName: true
-    };
-
-    var otherParams = {};
-    for (var k in parameters) {
-      if (parameters.hasOwnProperty(k) && graphqlParamNames[k] !== true) {
-        otherParams[k] = parameters[k];
-      }
-    }
-    var fetchURL = locationQuery(otherParams);
-
-    // Defines a GraphQL fetcher using the fetch API.
-    function graphQLFetcher(graphQLParams, opts) {
-      return fetch(fetchURL, {
-        method: 'post',
-        headers: Object.assign(
-          {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          opts && opts.headers,
-        ),
-        body: JSON.stringify(graphQLParams),
-        credentials: 'include',
-      }).then(function (response) {
-        return response.json();
-      });
-    }
-
-    function makeFetcher() {
-      if('${typeof subscriptionEndpoint}' == 'string') {
-        let client = null;
-        let url = window.location.href;
-        if('${typeof websocketClient}' == 'string' && '${websocketClient}' === 'v1') {
-          client = window.graphqlWs.createClient({url: ${safeSerialize(
-            subscriptionEndpoint,
-          )} });
-          return window.GraphiQL.createFetcher({url, wsClient: client});
-        } else {
-          let clientClass = window.SubscriptionsTransportWs.SubscriptionClient;
-          client = new clientClass(${safeSerialize(subscriptionEndpoint)}, {
-            reconnect: true
-          });
-          return window.GraphiQL.createFetcher({url, legacyClient: client});
-        }
-      }else{
-        return graphQLFetcher;
-      }
-    }
-
-    // When the query and variables string is edited, update the URL bar so
-    // that it can be easily shared.
-    function onEditQuery(newQuery) {
-      parameters.query = newQuery;
-      updateURL();
-    }
-
-    function onEditVariables(newVariables) {
-      parameters.variables = newVariables;
-      updateURL();
-    }
-
-    function onEditOperationName(newOperationName) {
-      parameters.operationName = newOperationName;
-      updateURL();
-    }
-
-    function updateURL() {
+    /**
+     * When the query and variables string are edited, update the URL bar so
+     * that it can be easily shared.
+     */
+     function updateURL() {
       history.replaceState(null, null, locationQuery(parameters));
     }
-
-    // Render <GraphiQL /> into the body.
-    ReactDOM.render(
-      React.createElement(GraphiQL, {
-        fetcher:  makeFetcher(),
-        onEditQuery: onEditQuery,
-        onEditVariables: onEditVariables,
-        onEditOperationName: onEditOperationName,
-        query: ${safeSerialize(queryString)},
-        response: ${safeSerialize(resultString)},
-        variables: ${safeSerialize(variablesString)},
-        operationName: ${safeSerialize(operationName)},
-        defaultQuery: ${safeSerialize(defaultQuery)},
-        headerEditorEnabled: ${safeSerialize(headerEditorEnabled)},
-        shouldPersistHeaders: ${safeSerialize(shouldPersistHeaders)}
-      }),
-      document.getElementById('graphiql')
-    );
-  </script>
-</body>
+      ReactDOM.render(
+        React.createElement(GraphiQL, {
+          fetcher: GraphiQL.createFetcher({
+            url: window.location.origin + window.location.pathname,
+            subscriptionUrl: ${safeSerialize(subscriptionEndpoint)},
+          }),
+          defaultVariableEditorOpen: true,
+          query: ${safeSerialize(queryString)},
+          response: ${safeSerialize(resultString)},
+          variables: ${safeSerialize(variablesString)},
+          operationName: ${safeSerialize(operationName)},
+          defaultQuery: ${safeSerialize(defaultQuery)},
+          headerEditorEnabled: ${safeSerialize(headerEditorEnabled)},
+          shouldPersistHeaders: ${safeSerialize(shouldPersistHeaders)}
+          }),
+        document.getElementById('graphiql'),
+      );
+    </script>
+  </body>
 </html>`;
 }
