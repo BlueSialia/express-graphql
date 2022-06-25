@@ -1,8 +1,8 @@
-/examples
+/dist/__tests__
+/dist/examples
 /integrationTests
 /resources
 /src
-*__tests__*
 *ignore*
 .*rc
 *.tgz

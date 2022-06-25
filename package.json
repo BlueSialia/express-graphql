@@ -37,8 +37,8 @@
     "prettier:check": "prettier --check .",
     "build": "ttsc",
     "build:check": "ttsc --noEmit",
-    "start": "node -r ./resources/register.js examples/index.ts",
-    "start:subscription": "node -r ./resources/register.js examples/index_subscription.ts"
+    "start": "node dist/examples/index.js",
+    "start:subscription": "node dist/examples/index_subscription.js"
   },
   "dependencies": {
     "accepts": "~1.3.8",

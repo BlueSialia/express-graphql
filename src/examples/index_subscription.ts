@@ -5,11 +5,11 @@ import { execute, subscribe } from 'graphql';
 import ws from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 
-import { graphqlHTTP } from '../src';
+import { graphqlHTTP } from '..';
 
 import { schema, roots, rootValue } from './schema';
 
-const PORT = 4000;
+const PORT = 12000;
 const subscriptionEndpoint = `ws://localhost:${PORT}/subscriptions`;
 
 const app = express();
