@@ -1,37 +1,31 @@
-import type { IncomingMessage, ServerResponse } from 'http';
-
+import type { Request, Response } from 'express';
 import type {
   DocumentNode,
-  ValidationRule,
   ExecutionArgs,
   ExecutionResult,
   FormattedExecutionResult,
-  GraphQLSchema,
   GraphQLFieldResolver,
-  GraphQLTypeResolver,
   GraphQLFormattedError,
+  GraphQLSchema,
+  GraphQLTypeResolver,
+  ValidationRule,
 } from 'graphql';
-import accepts from 'accepts';
-import httpError from 'http-errors';
 import {
-  Source,
+  execute,
+  getOperationAST,
   GraphQLError,
   parse,
-  validate,
-  execute,
-  validateSchema,
-  getOperationAST,
+  Source,
   specifiedRules,
+  validate,
+  validateSchema,
 } from 'graphql';
+import httpError from 'http-errors';
 
-import type { GraphiQLOptions, GraphiQLData } from './renderGraphiQL';
 import { parseBody } from './parseBody';
+import type { GraphiQLData, GraphiQLOptions } from './renderGraphiQL';
 import { renderGraphiQL } from './renderGraphiQL';
 
-// `url` is always defined for IncomingMessage coming from http.Server
-type Request = IncomingMessage & { url: string };
-
-type Response = ServerResponse & { json?: (data: unknown) => void };
 type MaybePromise<T> = Promise<T> | T;
 
 /**
@@ -477,8 +471,7 @@ export interface GraphQLParams {
 }
 
 /**
- * Provided a "Request" provided by express or connect (typically a node style
- * HTTPClientRequest), Promise the GraphQL request parameters.
+ * Provided a "Request" provided by express, Promise the GraphQL request parameters.
  */
 export async function getGraphQLParams(
   request: Request,
@@ -524,7 +517,7 @@ export async function getGraphQLParams(
 function canDisplayGraphiQL(request: Request, params: GraphQLParams): boolean {
   // If `raw` false, GraphiQL mode is not enabled.
   // Allowed to show GraphiQL if not requested as raw and this request prefers HTML over JSON.
-  return !params.raw && accepts(request).types(['json', 'html']) === 'html';
+  return !params.raw && request.accepts(['json', 'html']) === 'html';
 }
 
 /**

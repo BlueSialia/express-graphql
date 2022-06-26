@@ -4,6 +4,8 @@ const assert = require('assert');
 
 const { buildSchema } = require('graphql');
 
+const { request } = require('express');
+
 const { graphqlHTTP } = require('@bluesialia/express-graphql');
 
 const schema = buildSchema('type Query { hello: String }');
@@ -16,13 +18,14 @@ const middleware = graphqlHTTP({
 
 assert(typeof middleware === 'function');
 
-const request = {
+const req = {
   url: 'http://example.com',
   method: 'GET',
   headers: {},
   body: {
     query: '{ hello }',
   },
+  accepts: request.accepts
 };
 
 const response = {
@@ -36,7 +39,7 @@ const response = {
   },
 };
 
-middleware(request, response).then(() => {
+middleware(req, response).then(() => {
   assert.deepStrictEqual(response.headers, {
     'Content-Length': '26',
     'Content-Type': 'application/json; charset=utf-8',

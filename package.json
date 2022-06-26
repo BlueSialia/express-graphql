@@ -41,14 +41,11 @@
     "start:subscription": "node --inspect dist/examples/index_subscription.js"
   },
   "dependencies": {
-    "accepts": "~1.3.8",
     "content-type": "~1.0.4",
-    "get-stream": "~6.0.1",
     "http-errors": "~2.0.0"
   },
   "devDependencies": {
     "@graphiql/toolkit": "~0.6.0",
-    "@types/accepts": "~1.3.5",
     "@types/body-parser": "~1.19.2",
     "@types/chai": "~4.3.1",
     "@types/content-type": "~1.1.5",

@@ -1,13 +1,10 @@
-import type { IncomingMessage } from 'http';
-import type { Inflate, Gunzip } from 'zlib';
+import type { Gunzip, Inflate } from 'zlib';
 import zlib from 'zlib';
 
-import getStream, { MaxBufferError } from 'get-stream';
-import httpError from 'http-errors';
-import contentType from 'content-type';
 import type { ParsedMediaType } from 'content-type';
-
-type Request = IncomingMessage & { body?: unknown };
+import contentType from 'content-type';
+import type { Request } from 'express';
+import httpError from 'http-errors';
 
 /**
  * Provided a "Request" provided by express or connect (typically a node style
@@ -86,49 +83,49 @@ async function readBody(
   typeInfo: ParsedMediaType,
 ): Promise<string> {
   const charset = typeInfo.parameters.charset?.toLowerCase() ?? 'utf-8';
+  const contentEncoding = req.headers['content-encoding']?.toLocaleLowerCase();
 
   // Assert charset encoding per JSON RFC 7159 sec 8.1
   if (charset !== 'utf8' && charset !== 'utf-8' && charset !== 'utf16le') {
     throw httpError(415, `Unsupported charset "${charset.toUpperCase()}".`);
   }
 
-  // Get content-encoding (e.g. gzip)
-  const contentEncoding = req.headers['content-encoding'];
-  const encoding =
-    typeof contentEncoding === 'string'
-      ? contentEncoding.toLowerCase()
-      : 'identity';
-  const maxBuffer = 100 * 1024; // 100kb
-  const stream = decompressed(req, encoding);
-
-  // Read body from stream.
-  try {
-    const buffer = await getStream.buffer(stream, { maxBuffer });
-    return buffer.toString(charset);
-  } catch (rawError: unknown) {
-    /* istanbul ignore else: Thrown by underlying library. */
-    if (rawError instanceof MaxBufferError) {
-      throw httpError(413, 'Invalid body: request entity too large.');
-    } else {
-      const message =
-        rawError instanceof Error ? rawError.message : String(rawError);
-      throw httpError(400, `Invalid body: ${message}.`);
-    }
-  }
+  return decompressed(req, contentEncoding, charset);
 }
 
-// Return a decompressed stream, given an encoding.
-function decompressed(
+/**
+ * Return a string, given a request.
+ * @param req
+ * @param encoding
+ * @param charset
+ * @returns
+ */
+async function decompressed(
   req: Request,
-  encoding: string,
-): Request | Inflate | Gunzip {
+  encoding = 'identity',
+  charset: BufferEncoding = 'utf-8',
+  maxSize: number = 100 * 1024, // 100 KB
+): Promise<string> {
+  let stream: Request | Inflate | Gunzip;
   switch (encoding) {
     case 'identity':
-      return req;
+      stream = req;
+      break;
     case 'deflate':
-      return req.pipe(zlib.createInflate());
+      stream = req.pipe(zlib.createInflate());
+      break;
     case 'gzip':
-      return req.pipe(zlib.createGunzip());
+      stream = req.pipe(zlib.createGunzip());
+      break;
+    default:
+      throw httpError(415, `Unsupported content-encoding "${encoding}".`);
   }
-  throw httpError(415, `Unsupported content-encoding "${encoding}".`);
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of stream) {
+    size += chunk.byteLength;
+    if (size > maxSize) throw httpError(413, 'Invalid body: request entity too large.');
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks).toString(charset);
 }
