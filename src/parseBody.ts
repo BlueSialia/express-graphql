@@ -77,37 +77,41 @@ export async function parseBody(
  */
 const jsonObjRegex = /^[ \t\n\r]*\{/;
 
-// Read and parse a request body.
+/**
+ * Read and parse a request body.
+ * @param req
+ * @param typeInfo
+ * @returns
+ */
 async function readBody(
   req: Request,
   typeInfo: ParsedMediaType,
 ): Promise<string> {
   const charset = typeInfo.parameters.charset?.toLowerCase() ?? 'utf-8';
-  const contentEncoding = req.headers['content-encoding']?.toLocaleLowerCase();
 
   // Assert charset encoding per JSON RFC 7159 sec 8.1
   if (charset !== 'utf8' && charset !== 'utf-8' && charset !== 'utf16le') {
     throw httpError(415, `Unsupported charset "${charset.toUpperCase()}".`);
   }
 
-  return decompressed(req, contentEncoding, charset);
+  return decompressed(req, charset);
 }
 
 /**
- * Return a string, given a request.
- * @param req
- * @param encoding
- * @param charset
- * @returns
+ * Checks if a request is compressed and decompresses it into a string.
+ * @param req Request to decompress.
+ * @param charset Charset to use when parsing the request into a string.
+ * @returns The request in String form.
  */
 async function decompressed(
   req: Request,
-  encoding = 'identity',
   charset: BufferEncoding = 'utf-8',
   maxSize: number = 100 * 1024, // 100 KB
 ): Promise<string> {
   let stream: Request | Inflate | Gunzip;
+  const encoding = req.headers['content-encoding']?.toLocaleLowerCase();
   switch (encoding) {
+    case undefined:
     case 'identity':
       stream = req;
       break;
@@ -124,7 +128,8 @@ async function decompressed(
   let size = 0;
   for await (const chunk of stream) {
     size += chunk.byteLength;
-    if (size > maxSize) throw httpError(413, 'Invalid body: request entity too large.');
+    if (size > maxSize)
+      throw httpError(413, 'Invalid body: request entity too large.');
     chunks.push(Buffer.from(chunk));
   }
   return Buffer.concat(chunks).toString(charset);

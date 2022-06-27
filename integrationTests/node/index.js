@@ -25,7 +25,7 @@ const req = {
   body: {
     query: '{ hello }',
   },
-  accepts: request.accepts
+  accepts: request.accepts,
 };
 
 const response = {
