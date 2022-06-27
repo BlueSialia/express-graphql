@@ -1,3 +1,4 @@
+#!/bin/bash
 # Exit immediately if any subcommand terminated
 trap "exit 1" ERR
 
