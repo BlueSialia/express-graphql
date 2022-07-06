@@ -9,6 +9,7 @@ const schema = buildSchema('type Query { hello: String }');
 
 const middleware = graphqlHTTP({
   graphiql: true,
+  pretty: true,
   schema,
   rootValue: { hello: 'world' },
 });
@@ -25,7 +26,7 @@ const req = {
   accepts: request.accepts,
 };
 
-const response = {
+const res = {
   headers: {},
   setHeader(name, value) {
     this.headers[name] = value;
@@ -36,10 +37,10 @@ const response = {
   },
 };
 
-middleware(req, response).then(() => {
-  assert.deepStrictEqual(response.headers, {
-    'Content-Length': '26',
+middleware(req, res).then(() => {
+  assert.deepStrictEqual(res.headers, {
+    'Content-Length': '40',
     'Content-Type': 'application/json; charset=utf-8',
   });
-  assert.deepStrictEqual(response.text, '{"data":{"hello":"world"}}');
+  assert.deepStrictEqual(res.text, '{\n  "data": {\n    "hello": "world"\n  }\n}');
 });

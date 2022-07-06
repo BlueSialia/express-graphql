@@ -255,7 +255,7 @@ function resolveOptions(options: UserOptions, request: Request): UsableOptions {
         request.protocol +
         '://' +
         (request.headers['x-forwarded-host'] ?? request.headers.host) +
-        request.originalUrl.split('?')[0],
+        request.originalUrl?.split('?')[0],
     },
   };
 
