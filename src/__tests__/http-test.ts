@@ -5,7 +5,6 @@ import supertest from 'supertest';
 import bodyParser from 'body-parser';
 
 import type { ASTVisitor, ValidationContext } from 'graphql';
-import sinon from 'sinon';
 import multer from 'multer'; // cSpell:words mimetype originalname
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
@@ -1161,7 +1160,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP({
           schema: TestSchema,
-          customFormatErrorFn(error) {
+          formatErrorFn(error) {
             return {
               message:
                 `Custom ${error.constructor.name} format: ` + error.message,
@@ -1194,7 +1193,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP({
           schema: TestSchema,
-          customFormatErrorFn(error) {
+          formatErrorFn(error) {
             return {
               message:
                 `Custom ${error.constructor.name} format: ` + error.message,
@@ -1222,7 +1221,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP({
           schema: TestSchema,
-          customFormatErrorFn(error) {
+          formatErrorFn(error) {
             return {
               message: error.message,
               locations: error.locations,
@@ -1472,45 +1471,6 @@ function runTests(server: Server) {
       });
     });
 
-    it('`formatError` is deprecated', async () => {
-      const app = server();
-
-      app.get(
-        urlString(),
-        graphqlHTTP({
-          schema: TestSchema,
-          formatError(error) {
-            return { message: 'Custom error format: ' + error.message };
-          },
-        }),
-      );
-
-      const spy = sinon.spy(console, 'warn');
-
-      const response = await app.request().get(
-        urlString({
-          variables: 'who:You',
-          query: 'query helloWho($who: String){ test(who: $who) }',
-        }),
-      );
-
-      expect(
-        spy.calledWith(
-          '`formatError` is deprecated and replaced by `customFormatErrorFn`. It will be removed in version 1.0.0.',
-        ),
-      );
-      expect(response.status).to.equal(400);
-      expect(JSON.parse(response.text)).to.deep.equal({
-        errors: [
-          {
-            message: 'Custom error format: Variables are invalid JSON.',
-          },
-        ],
-      });
-
-      spy.restore();
-    });
-
     it('allows for custom error formatting of poorly formed requests', async () => {
       const app = server();
 
@@ -1518,7 +1478,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP({
           schema: TestSchema,
-          customFormatErrorFn(error) {
+          formatErrorFn(error) {
             return { message: 'Custom error format: ' + error.message };
           },
         }),
@@ -1644,7 +1604,6 @@ function runTests(server: Server) {
 
       expect(response.status).to.equal(200);
       expect(response.type).to.equal('text/html');
-      expect(response.text).to.include('{test}');
       expect(response.text).to.include('graphiql.min.js');
     });
 
@@ -1669,64 +1628,6 @@ function runTests(server: Server) {
       expect(response.text).to.include(
         'defaultQuery: "query testDefaultQuery { hello }"',
       );
-    });
-
-    it('contains a pre-run response within GraphiQL', async () => {
-      const app = server();
-
-      app.get(
-        urlString(),
-        graphqlHTTP({
-          schema: TestSchema,
-          graphiql: true,
-        }),
-      );
-
-      const response = await app
-        .request()
-        .get(urlString({ query: '{test}' }))
-        .set('Accept', 'text/html');
-
-      expect(response.status).to.equal(200);
-      expect(response.type).to.equal('text/html');
-      expect(response.text).to.include(
-        'response: ' +
-          JSON.stringify(
-            JSON.stringify({ data: { test: 'Hello World' } }, null, 2),
-          ),
-      );
-    });
-
-    it('contains a pre-run operation name within GraphiQL', async () => {
-      const app = server();
-
-      app.get(
-        urlString(),
-        graphqlHTTP({
-          schema: TestSchema,
-          graphiql: true,
-        }),
-      );
-
-      const response = await app
-        .request()
-        .get(
-          urlString({
-            query: 'query A{a:test} query B{b:test}',
-            operationName: 'B',
-          }),
-        )
-        .set('Accept', 'text/html');
-
-      expect(response.status).to.equal(200);
-      expect(response.type).to.equal('text/html');
-      expect(response.text).to.include(
-        'response: ' +
-          JSON.stringify(
-            JSON.stringify({ data: { b: 'Hello World' } }, null, 2),
-          ),
-      );
-      expect(response.text).to.include('operationName: "B"');
     });
 
     it('escapes HTML in queries within GraphiQL', async () => {
@@ -1782,35 +1683,6 @@ function runTests(server: Server) {
       );
     });
 
-    it('GraphiQL renders provided variables', async () => {
-      const app = server();
-
-      app.get(
-        urlString(),
-        graphqlHTTP({
-          schema: TestSchema,
-          graphiql: true,
-        }),
-      );
-
-      const response = await app
-        .request()
-        .get(
-          urlString({
-            query: 'query helloWho($who: String) { test(who: $who) }',
-            variables: JSON.stringify({ who: 'Dolly' }),
-          }),
-        )
-        .set('Accept', 'text/html');
-
-      expect(response.status).to.equal(200);
-      expect(response.type).to.equal('text/html');
-      expect(response.text).to.include(
-        'variables: ' +
-          JSON.stringify(JSON.stringify({ who: 'Dolly' }, null, 2)),
-      );
-    });
-
     it('GraphiQL accepts an empty query', async () => {
       const app = server();
 
@@ -1829,35 +1701,9 @@ function runTests(server: Server) {
 
       expect(response.status).to.equal(200);
       expect(response.type).to.equal('text/html');
-      expect(response.text).to.include('response: undefined');
-    });
-
-    it('GraphiQL accepts a mutation query - does not execute it', async () => {
-      const app = server();
-
-      app.get(
-        urlString(),
-        graphqlHTTP({
-          schema: TestSchema,
-          graphiql: true,
-        }),
-      );
-
-      const response = await app
-        .request()
-        .get(
-          urlString({
-            query: 'mutation TestMutation { writeTest { test } }',
-          }),
-        )
-        .set('Accept', 'text/html');
-
-      expect(response.status).to.equal(200);
-      expect(response.type).to.equal('text/html');
       expect(response.text).to.include(
-        'query: "mutation TestMutation { writeTest { test } }"',
+        'The request to this GraphQL server provided the header',
       );
-      expect(response.text).to.include('response: undefined');
     });
 
     it('returns HTML if preferred', async () => {
@@ -1951,7 +1797,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP({
           schema: TestSchema,
-          graphiql: { subscriptionEndpoint: 'ws://localhost' },
+          graphiql: { fetcher: { subscriptionUrl: 'ws://localhost' } },
         }),
       );
 
@@ -1963,10 +1809,10 @@ function runTests(server: Server) {
       expect(response.status).to.equal(200);
       expect(response.type).to.equal('text/html');
       // should contain graphql-ws browser client
-      expect(response.text).to.include('graphql-transport-ws');
+      expect(response.text).to.include('graphql-ws/umd/graphql-ws.js');
 
       // should contain the subscriptionEndpoint url
-      expect(response.text).to.include('ws:\\/\\/localhost');
+      expect(response.text).to.include('ws://localhost');
     });
   });
 
@@ -1978,7 +1824,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP({
           schema: TestSchema,
-          customValidateFn(schema, documentAST, validationRules) {
+          validateFn(schema, documentAST, validationRules) {
             return validate(schema, documentAST, validationRules);
           },
         }),
@@ -2000,7 +1846,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP({
           schema: TestSchema,
-          customValidateFn(schema, documentAST, validationRules) {
+          validateFn(schema, documentAST, validationRules) {
             const errors = validate(schema, documentAST, validationRules);
 
             return [new GraphQLError(`custom error ${errors.length}`)];
@@ -2077,7 +1923,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP(() => ({
           schema: TestSchema,
-          async customExecuteFn(args) {
+          async executeFn(args) {
             seenExecuteArgs = args;
             const result = await Promise.resolve(execute(args));
             return {
@@ -2106,7 +1952,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP(() => ({
           schema: TestSchema,
-          customExecuteFn() {
+          executeFn() {
             throw new Error('I did something wrong');
           },
         })),
@@ -2131,7 +1977,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP(() => ({
           schema: TestSchema,
-          customParseFn(args) {
+          parseFn(args) {
             seenParseArgs = args;
             return parse(new Source('{test}', 'Custom parse function'));
           },
@@ -2150,7 +1996,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP(() => ({
           schema: TestSchema,
-          customParseFn() {
+          parseFn() {
             throw new GraphQLError('my custom parse error');
           },
         })),
@@ -2174,7 +2020,7 @@ function runTests(server: Server) {
         graphqlHTTP(() => ({
           schema: TestSchema,
           context: { foo: 'bar' },
-          extensions({ context }) {
+          extensions: ({ context }) => {
             return { contextValue: JSON.stringify(context) };
           },
         })),
@@ -2199,7 +2045,7 @@ function runTests(server: Server) {
         urlString(),
         graphqlHTTP({
           schema: TestSchema,
-          customFormatErrorFn: () => ({
+          formatErrorFn: () => ({
             message: 'Some generic error message.',
           }),
           extensions({ result }) {

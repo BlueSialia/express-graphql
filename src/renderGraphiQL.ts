@@ -1,47 +1,4 @@
-import type { FormattedExecutionResult } from 'graphql';
-
-export interface GraphiQLData {
-  query?: string | null;
-  variables?: { readonly [name: string]: unknown } | null;
-  operationName?: string | null;
-  result?: FormattedExecutionResult;
-}
-
-export interface GraphiQLOptions {
-  /**
-   * An optional GraphQL string to use when no query is provided and no stored
-   * query exists from a previous session.  If undefined is provided, GraphiQL
-   * will use its own default query.
-   */
-  defaultQuery?: string;
-
-  /**
-   * An optional boolean which enables the header editor when true.
-   * Defaults to false.
-   */
-  headerEditorEnabled?: boolean;
-
-  /**
-   * An optional boolean which enables headers to be saved to local
-   * storage when true.
-   * Defaults to false.
-   */
-  shouldPersistHeaders?: boolean;
-
-  /**
-   * A websocket endpoint for subscription
-   */
-  subscriptionEndpoint?: string;
-}
-
-/**
- * Sanitizes values to be used within a <script> tag.
- */
-function safeSerialize(data: string | boolean | null | undefined): string {
-  return data != null
-    ? JSON.stringify(data).replace(/\//g, '\\/')
-    : 'undefined';
-}
+import type { CustomGraphiQLProps } from 'interfaces';
 
 /**
  * Compile time function. @See ./resources/customTransformation.ts
@@ -56,26 +13,37 @@ declare function loadFileStaticallyFromNPM(npmPath: string): string;
  * requested query.
  */
 export function renderGraphiQL(
-  data: GraphiQLData,
-  options?: GraphiQLOptions,
+  props: CustomGraphiQLProps,
+  polyfill = false,
 ): string {
-  const queryString = data.query;
-  const variablesString =
-    data.variables != null ? JSON.stringify(data.variables, null, 2) : null;
-  const resultString =
-    data.result != null ? JSON.stringify(data.result, null, 2) : null;
-  const operationName = data.operationName;
-  const defaultQuery = options?.defaultQuery;
-  const headerEditorEnabled = options?.headerEditorEnabled;
-  const shouldPersistHeaders = options?.shouldPersistHeaders;
-  const subscriptionEndpoint = options?.subscriptionEndpoint;
+  let propsString = '';
+  for (const prop in props) {
+    if (
+      prop !== 'fetcher' &&
+      Object.prototype.hasOwnProperty.call(props, prop)
+    ) {
+      const property = (props as { [key: string]: unknown })[prop];
+      propsString = propsString + prop + ': ' + JSON.stringify(property) + ', ';
+    }
+  }
+  let pollyfillScripts = '';
+  if (polyfill) {
+    pollyfillScripts = `<script>
+    // promise-polyfill/dist/polyfill.min.js
+    ${loadFileStaticallyFromNPM('promise-polyfill/dist/polyfill.min.js')}
+  </script>
+  <script>
+    // unfetch/dist/unfetch.umd.js
+    ${loadFileStaticallyFromNPM('unfetch/dist/unfetch.umd.js')}
+  </script>`;
+  }
+
   let subscriptionScript = '';
-  if (subscriptionEndpoint != null) {
-    subscriptionScript = `
-    <script>
+  if (props.fetcher?.subscriptionUrl !== undefined) {
+    subscriptionScript = `<script>
+      // graphql-ws/umd/graphql-ws.js
       ${loadFileStaticallyFromNPM('graphql-ws/umd/graphql-ws.js')}
-    </script>
-    `;
+    </script>`;
   }
 
   return `<!--
@@ -106,14 +74,7 @@ add "&raw" to the end of the URL within a browser.
       /* graphiql/graphiql.css */
       ${loadFileStaticallyFromNPM('graphiql/graphiql.min.css')}
     </style>
-    <script>
-      // promise-polyfill/dist/polyfill.min.js
-      ${loadFileStaticallyFromNPM('promise-polyfill/dist/polyfill.min.js')}
-    </script>
-    <script>
-      // unfetch/dist/unfetch.umd.js
-      ${loadFileStaticallyFromNPM('unfetch/dist/unfetch.umd.js')}
-    </script>
+    ${pollyfillScripts}
     <script>
       // react/umd/react.production.min.js
       ${loadFileStaticallyFromNPM('react/umd/react.production.min.js')}
@@ -132,47 +93,10 @@ add "&raw" to the end of the URL within a browser.
     </script>
     ${subscriptionScript}
     <script>
-    // Collect the URL parameters
-    const parameters = {};
-    window.location.search.substr(1).split('&').forEach(function (entry) {
-      const eq = entry.indexOf('=');
-      if (eq >= 0) {
-        parameters[decodeURIComponent(entry.slice(0, eq))] =
-          decodeURIComponent(entry.slice(eq + 1));
-      }
-    });
-
-    // Produce a Location query string from a parameter object.
-    function locationQuery(params) {
-      return '?' + Object.keys(params).filter(function (key) {
-        return Boolean(params[key]);
-      }).map(function (key) {
-        return encodeURIComponent(key) + '=' +
-          encodeURIComponent(params[key]);
-      }).join('&');
-    }
-
-    /**
-     * When the query and variables string are edited, update the URL bar so
-     * that it can be easily shared.
-     */
-     function updateURL() {
-      history.replaceState(null, null, locationQuery(parameters));
-    }
       ReactDOM.render(
         React.createElement(GraphiQL, {
-          fetcher: GraphiQL.createFetcher({
-            url: window.location.origin + window.location.pathname,
-            subscriptionUrl: ${safeSerialize(subscriptionEndpoint)},
-          }),
-          defaultVariableEditorOpen: true,
-          query: ${safeSerialize(queryString)},
-          response: ${safeSerialize(resultString)},
-          variables: ${safeSerialize(variablesString)},
-          operationName: ${safeSerialize(operationName)},
-          defaultQuery: ${safeSerialize(defaultQuery)},
-          headerEditorEnabled: ${safeSerialize(headerEditorEnabled)},
-          shouldPersistHeaders: ${safeSerialize(shouldPersistHeaders)}
+          fetcher: GraphiQL.createFetcher(${JSON.stringify(props.fetcher)}),
+          ${propsString}
           }),
         document.getElementById('graphiql'),
       );

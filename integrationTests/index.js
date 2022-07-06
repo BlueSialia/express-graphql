@@ -1,11 +1,14 @@
 'use strict';
 
-const os = require('os');
-const fs = require('fs');
-const path = require('path');
-const childProcess = require('child_process');
+import childProcess from 'child_process';
+import fs from 'fs';
+import { describe, it } from 'mocha';
+import os from 'os';
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const { describe, it } = require('mocha');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 function exec(command, options = {}) {
   const result = childProcess.execSync(command, {

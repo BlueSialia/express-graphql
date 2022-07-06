@@ -13,7 +13,7 @@ const validationRules = [
 graphqlHTTP({
   graphiql: true,
   schema,
-  customFormatErrorFn: (error: Error) => ({
+  formatErrorFn: (error: Error) => ({
     message: error.message,
   }),
   validationRules,

@@ -1,12 +1,9 @@
 'use strict';
 
-const assert = require('assert');
-
-const { buildSchema } = require('graphql');
-
-const { request } = require('express');
-
-const { graphqlHTTP } = require('@bluesialia/express-graphql');
+import { graphqlHTTP } from '@bluesialia/express-graphql';
+import assert from 'assert';
+import { request } from 'express';
+import { buildSchema } from 'graphql';
 
 const schema = buildSchema('type Query { hello: String }');
 

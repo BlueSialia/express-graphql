@@ -1,24 +1,39 @@
 {
   "compilerOptions": {
-    "lib": ["es2018"],
-    "module": "commonjs",
-    "target": "es2018",
+    "lib": ["ES2022", "dom"],
+    "module": "ES2022",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "baseUrl": "src",
     "outDir": "dist",
-    "moduleResolution": "node",
-    "isolatedModules": true,
     "declaration": true,
-    "strict": true,
+    "sourceMap": true,
     "esModuleInterop": true,
+    "newLine": "LF",
+    "preserveConstEnums": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "importsNotUsedAsValues": "error",
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
     "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
     "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "forceConsistentCasingInFileNames": true,
-    "importsNotUsedAsValues": "error",
-    "newLine": "LF",
-    "preserveConstEnums": true,
-    "plugins": [{ "transform": "./resources/customTransformation.ts" }]
+    "plugins": [
+      {
+        "transform": "/home/bluesialia/Desktop/express-graphql/resources/customTransformation.ts"
+      }
+    ]
   },
-  "include": ["src"]
+  "include": ["src"],
+  "tsc-alias": {
+    "resolveFullPaths": true
+  }
 }

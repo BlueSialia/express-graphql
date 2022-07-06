@@ -1,5 +1,6 @@
 {
   "private": true,
+  "type": "module",
   "scripts": {
     "test": "node test.js"
   },
@@ -7,7 +8,6 @@
     "@bluesialia/express-graphql": "file:../express-graphql.tgz",
     "express": "~4.18.1",
     "graphql": "~16.5.0",
-    "node-14": "npm:node@14.x.x",
     "node-16": "npm:node@16.x.x",
     "node-18": "npm:node@18.x.x"
   }

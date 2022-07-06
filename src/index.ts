@@ -1,14 +1,8 @@
 import type { Request, Response } from 'express';
 import type {
   DocumentNode,
-  ExecutionArgs,
   ExecutionResult,
   FormattedExecutionResult,
-  GraphQLFieldResolver,
-  GraphQLFormattedError,
-  GraphQLSchema,
-  GraphQLTypeResolver,
-  ValidationRule,
 } from 'graphql';
 import {
   execute,
@@ -21,220 +15,49 @@ import {
   validateSchema,
 } from 'graphql';
 import httpError from 'http-errors';
+import type {
+  CustomGraphiQLProps,
+  GraphQLParams,
+  ProvidedOptions,
+  UsableOptions,
+  UserOptions,
+} from 'interfaces';
+import { parseBody } from 'parseBody';
+import { renderGraphiQL } from 'renderGraphiQL';
 
-import { parseBody } from './parseBody';
-import type { GraphiQLData, GraphiQLOptions } from './renderGraphiQL';
-import { renderGraphiQL } from './renderGraphiQL';
-
-type MaybePromise<T> = Promise<T> | T;
-
-/**
- * Used to configure the graphqlHTTP middleware by providing a schema
- * and other configuration options.
- *
- * Options can be provided as an Object, a Promise for an Object, or a Function
- * that returns an Object or a Promise for an Object.
- */
-export type Options =
-  | ((
-      request: Request,
-      response: Response,
-      params?: GraphQLParams,
-    ) => MaybePromise<OptionsData>)
-  | MaybePromise<OptionsData>;
-
-export interface OptionsData {
-  /**
-   * A GraphQL schema from graphql-js.
-   */
-  schema: GraphQLSchema;
-
-  /**
-   * A value to pass as the context to this middleware.
-   */
-  context?: unknown;
-
-  /**
-   * An object to pass as the rootValue to the graphql() function.
-   */
-  rootValue?: unknown;
-
-  /**
-   * A boolean to configure whether the output should be pretty-printed.
-   */
-  pretty?: boolean;
-
-  /**
-   * An optional array of validation rules that will be applied on the document
-   * in additional to those defined by the GraphQL spec.
-   */
-  validationRules?: ReadonlyArray<ValidationRule>;
-
-  /**
-   * An optional function which will be used to validate instead of default `validate`
-   * from `graphql-js`.
-   */
-  customValidateFn?: (
-    schema: GraphQLSchema,
-    documentAST: DocumentNode,
-    rules: ReadonlyArray<ValidationRule>,
-  ) => ReadonlyArray<GraphQLError>;
-
-  /**
-   * An optional function which will be used to execute instead of default `execute`
-   * from `graphql-js`.
-   */
-  customExecuteFn?: (args: ExecutionArgs) => MaybePromise<ExecutionResult>;
-
-  /**
-   * An optional function which will be used to format any errors produced by
-   * fulfilling a GraphQL operation. If no function is provided, GraphQL's
-   * default spec-compliant `formatError` function will be used.
-   */
-  customFormatErrorFn?: (error: GraphQLError) => GraphQLFormattedError;
-
-  /**
-   * An optional function which will be used to create a document instead of
-   * the default `parse` from `graphql-js`.
-   */
-  customParseFn?: (source: Source) => DocumentNode;
-
-  /**
-   * `formatError` is deprecated and replaced by `customFormatErrorFn`. It will
-   *  be removed in version 1.0.0.
-   */
-  formatError?: (error: GraphQLError) => GraphQLFormattedError;
-
-  /**
-   * An optional function for adding additional metadata to the GraphQL response
-   * as a key-value object. The result will be added to "extensions" field in
-   * the resulting JSON. This is often a useful place to add development time
-   * info such as the runtime of a query or the amount of resources consumed.
-   *
-   * Information about the request is provided to be used.
-   *
-   * This function may be async.
-   */
-  extensions?: (
-    info: RequestInfo,
-  ) => MaybePromise<undefined | { [key: string]: unknown }>;
-
-  /**
-   * A boolean to optionally enable GraphiQL mode.
-   * Alternatively, instead of `true` you can pass in an options object.
-   */
-  graphiql?: boolean | GraphiQLOptions;
-
-  /**
-   * A resolver function to use when one is not provided by the schema.
-   * If not provided, the default field resolver is used (which looks for a
-   * value or method on the source value with the field's name).
-   */
-  fieldResolver?: GraphQLFieldResolver<unknown, unknown>;
-
-  /**
-   * A type resolver function to use when none is provided by the schema.
-   * If not provided, the default type resolver is used (which looks for a
-   * `__typename` field or alternatively calls the `isTypeOf` method).
-   */
-  typeResolver?: GraphQLTypeResolver<unknown, unknown>;
-}
-
-/**
- * All information about a GraphQL request.
- */
-export interface RequestInfo {
-  /**
-   * The parsed GraphQL document.
-   */
-  document: DocumentNode;
-
-  /**
-   * The variable values used at runtime.
-   */
-  variables: { readonly [name: string]: unknown } | null;
-
-  /**
-   * The (optional) operation name requested.
-   */
-  operationName: string | null;
-
-  /**
-   * The result of executing the operation.
-   */
-  result: FormattedExecutionResult;
-
-  /**
-   * A value to pass as the context to the graphql() function.
-   */
-  context?: unknown;
-}
-
-type Middleware = (request: Request, response: Response) => Promise<void>;
+export * from 'interfaces';
 
 /**
  * Middleware for express; takes an options object or function as input to
  * configure behavior, and returns an express middleware.
  */
-export function graphqlHTTP(options: Options): Middleware {
+export function graphqlHTTP(
+  options: ProvidedOptions,
+): (request: Request, response: Response) => Promise<void> {
   devAssertIsNonNullable(options, 'GraphQL middleware requires options.');
 
   return async function graphqlMiddleware(
     request: Request,
     response: Response,
   ): Promise<void> {
-    // Higher scoped variables are referred to at various stages in the asynchronous state machine below.
-    let params: GraphQLParams | undefined;
-    let showGraphiQL = false;
-    let graphiqlOptions: GraphiQLOptions | undefined;
-    let formatErrorFn:
-      | ((error: GraphQLError) => GraphQLFormattedError)
-      | undefined;
-    let pretty = false;
-    let result: ExecutionResult;
+    let params: GraphQLParams;
+    let userOptions: UserOptions;
+    let finalOptions!: UsableOptions;
+    let showGraphiQL: boolean;
+    let result: ExecutionResult = {};
 
     try {
-      // Parse the Request to get GraphQL request parameters.
-      try {
-        params = await getGraphQLParams(request);
-      } catch (error: unknown) {
-        // When we failed to parse the GraphQL parameters, we still need to get
-        // the options object, so make an options call to resolve just that.
-        const optionsData = await resolveOptions();
-        pretty = optionsData.pretty ?? false;
-        formatErrorFn =
-          optionsData.customFormatErrorFn ??
-          optionsData.formatError ??
-          formatErrorFn;
-        throw error;
-      }
+      // Initialize variables.
+      if (typeof options !== 'function') userOptions = await options;
+      else userOptions = await options(request, response);
+      finalOptions = resolveOptions(userOptions, request);
+      params = await getGraphQLParams(request);
+      if (typeof options === 'function') userOptions = await options(request, response, params);
+      finalOptions = resolveOptions(userOptions, request);
+      const { query, variables, operationName } = params;
 
-      // Then, resolve the Options to get OptionsData.
-      const optionsData = await resolveOptions(params);
-
-      // Collect information from the options data object.
-      const schema = optionsData.schema;
-      const rootValue = optionsData.rootValue;
-      const validationRules = optionsData.validationRules ?? [];
-      const fieldResolver = optionsData.fieldResolver;
-      const typeResolver = optionsData.typeResolver;
-      const graphiql = optionsData.graphiql ?? false;
-      const extensionsFn = optionsData.extensions;
-      const context = optionsData.context ?? request;
-      const parseFn = optionsData.customParseFn ?? parse;
-      const executeFn = optionsData.customExecuteFn ?? execute;
-      const validateFn = optionsData.customValidateFn ?? validate;
-
-      pretty = optionsData.pretty ?? false;
-      formatErrorFn =
-        optionsData.customFormatErrorFn ??
-        optionsData.formatError ??
-        formatErrorFn;
-
-      devAssertIsObject(
-        schema,
-        'GraphQL middleware options must contain a schema.',
-      );
+      showGraphiQL =
+        canDisplayGraphiQL(request, params) && Boolean(userOptions.graphiql);
 
       // GraphQL HTTP only supports GET and POST methods.
       if (request.method !== 'GET' && request.method !== 'POST') {
@@ -243,53 +66,50 @@ export function graphqlHTTP(options: Options): Middleware {
         });
       }
 
-      // Get GraphQL params from the request and POST body data.
-      const { query, variables, operationName } = params;
-      showGraphiQL = canDisplayGraphiQL(request, params) && graphiql !== false;
-      if (typeof graphiql !== 'boolean') {
-        graphiqlOptions = graphiql;
+      // If allowed to show GraphiQL, present it instead of JSON.
+      if (showGraphiQL) {
+        if (query == null) {
+          return respondWithGraphiQL(response, finalOptions.graphiql);
+        } else {
+          return response.redirect(request.path);
+        }
       }
 
-      // If there is no query, but GraphiQL will be displayed, do not produce
-      // a result, otherwise return a 400: Bad Request.
+      // If there is no query return a 400: Bad Request.
       if (query == null) {
-        if (showGraphiQL) {
-          return respondWithGraphiQL(response, graphiqlOptions);
-        }
         throw httpError(400, 'Must provide query string.');
       }
 
       // Validate Schema
-      const schemaValidationErrors = validateSchema(schema);
+      const schemaValidationErrors = validateSchema(finalOptions.schema);
       if (schemaValidationErrors.length > 0) {
         // Return 500: Internal Server Error if invalid schema.
-        throw httpError(500, 'GraphQL schema validation error.', {
-          graphqlErrors: schemaValidationErrors,
-        });
+        response.statusCode = 500;
+        throw schemaValidationErrors;
       }
 
       // Parse source to AST, reporting any syntax error.
       let documentAST: DocumentNode;
       try {
-        documentAST = parseFn(new Source(query, 'GraphQL request'));
+        documentAST = finalOptions.parseFn(
+          new Source(query, 'GraphQL request'),
+        );
       } catch (syntaxError: unknown) {
-        // Return 400: Bad Request if any syntax errors errors exist.
-        throw httpError(400, 'GraphQL syntax error.', {
-          graphqlErrors: [syntaxError],
-        });
+        // Return 400: Bad Request if any syntax errors exist.
+        response.statusCode = 400;
+        throw syntaxError;
       }
 
       // Validate AST, reporting any errors.
-      const validationErrors = validateFn(schema, documentAST, [
-        ...specifiedRules,
-        ...validationRules,
-      ]);
-
+      const validationErrors = finalOptions.validateFn(
+        finalOptions.schema,
+        documentAST,
+        [...specifiedRules, ...finalOptions.validationRules],
+      );
       if (validationErrors.length > 0) {
         // Return 400: Bad Request if any validation errors exist.
-        throw httpError(400, 'GraphQL validation error.', {
-          graphqlErrors: validationErrors,
-        });
+        response.statusCode = 400;
+        throw validationErrors;
       }
 
       // Only query operations are allowed on GET requests.
@@ -300,9 +120,8 @@ export function graphqlHTTP(options: Options): Middleware {
           // If GraphiQL can be shown, do not perform this query, but
           // provide it to GraphiQL so that the requester may perform it
           // themselves if desired.
-          if (showGraphiQL) {
-            return respondWithGraphiQL(response, graphiqlOptions, params);
-          }
+          if (showGraphiQL)
+            return respondWithGraphiQL(response, finalOptions.graphiql);
 
           // Otherwise, report a 405: Method Not Allowed error.
           throw httpError(
@@ -315,180 +134,195 @@ export function graphqlHTTP(options: Options): Middleware {
 
       // Perform the execution, reporting any errors creating the context.
       try {
-        result = await executeFn({
-          schema,
+        result = await finalOptions.executeFn({
+          schema: finalOptions.schema,
           document: documentAST,
-          rootValue,
-          contextValue: context,
+          rootValue: finalOptions.rootValue,
+          contextValue: finalOptions.context,
           variableValues: variables,
           operationName,
-          fieldResolver,
-          typeResolver,
+          fieldResolver: finalOptions.fieldResolver,
+          typeResolver: finalOptions.typeResolver,
         });
       } catch (contextError: unknown) {
         // Return 400: Bad Request if any execution context errors exist.
-        throw httpError(400, 'GraphQL execution context error.', {
-          graphqlErrors: [contextError],
-        });
+        response.statusCode = 400;
+        throw contextError;
       }
 
       // Collect and apply any metadata extensions if a function was provided.
       // https://graphql.github.io/graphql-spec/#sec-Response-Format
-      if (extensionsFn) {
-        const extensions = await extensionsFn({
+      if (finalOptions.extensions) {
+        const extensions = await finalOptions.extensions({
           document: documentAST,
           variables,
           operationName,
           result,
-          context,
+          context: finalOptions.context,
         });
 
         if (extensions != null) {
           result = { ...result, extensions };
         }
       }
-    } catch (rawError: unknown) {
-      // If an error was caught, report the httpError status, or 500.
-      const error = httpError(
-        500,
-        /* istanbul ignore next: Thrown by underlying library. */
-        rawError instanceof Error ? rawError : String(rawError),
-      );
 
-      response.statusCode = error.status;
+      // If no data was included in the result, that indicates a runtime query
+      // error, indicate as such with a generic status code.
+      // Note: Information about the error itself will still be contained in
+      // the resulting JSON payload.
+      // https://graphql.github.io/graphql-spec/#sec-Data
+      if (response.statusCode === 200 && result.data == null) {
+        response.statusCode = 500;
+      }
+    } catch (error: unknown) {
+      const errors = error instanceof Array ? error : [error];
 
-      const { headers } = error;
-      if (headers != null) {
-        for (const [key, value] of Object.entries(headers)) {
-          response.setHeader(key, String(value));
+      // Transform into GraphQLFormattedError.
+      result.errors = errors.map((error) => {
+        let status: number;
+        if (error instanceof GraphQLError) {
+          status = (error.originalError as httpError.HttpError)?.status ?? 500;
+        } else if (error instanceof httpError.HttpError) {
+          status = error.status;
+          if (error.headers != null) {
+            for (const [key, value] of Object.entries(error.headers)) {
+              response.setHeader(key, String(value));
+            }
+          }
+          error = new GraphQLError(error.message, {
+            originalError: error as Error,
+          });
+        } else if (error instanceof Error) {
+          status = 500;
+          error = httpError(500, error);
+          error = new GraphQLError(error.message, {
+            originalError: error as Error,
+          });
+        } else {
+          status = 500;
+          error = httpError(500, String(error));
+          error = new GraphQLError(error.message, {
+            originalError: error as Error,
+          });
         }
-      }
 
-      if (error.graphqlErrors == null) {
-        const graphqlError = new GraphQLError(error.message, {
-          originalError: error,
-        });
-        result = { data: undefined, errors: [graphqlError] };
-      } else {
-        result = {
-          data: undefined,
-          errors: error.graphqlErrors.map((error: Error) =>
-            error instanceof GraphQLError
-              ? error
-              : new GraphQLError(error.message, {
-                  originalError: error,
-                }),
-          ),
-        };
-      }
+        // Ensure code is an error code.
+        if (
+          response.statusCode === undefined ||
+          response.statusCode < 400
+        ) {
+          response.statusCode = status;
+        }
+
+        return error;
+      });
     }
 
-    // If no data was included in the result, that indicates a runtime query
-    // error, indicate as such with a generic status code.
-    // Note: Information about the error itself will still be contained in
-    // the resulting JSON payload.
-    // https://graphql.github.io/graphql-spec/#sec-Data
-    if (response.statusCode === 200 && result.data == null) {
-      response.statusCode = 500;
-    }
-
-    // Format any encountered errors.
     const formattedResult: FormattedExecutionResult = {
       ...result,
-      errors:
-        formatErrorFn !== undefined
-          ? result.errors?.map(formatErrorFn)
-          : result.errors?.map((error) => error.toJSON()),
+      errors: result.errors?.map((error) => {
+        return finalOptions?.formatErrorFn !== undefined
+          ? finalOptions.formatErrorFn(error)
+          : (error as GraphQLError).toJSON();
+      }),
     };
 
-    // If allowed to show GraphiQL, present it instead of JSON.
-    if (showGraphiQL) {
-      return respondWithGraphiQL(
-        response,
-        graphiqlOptions,
-        params,
-        formattedResult,
-      );
-    }
-
-    // If "pretty" JSON isn't requested, and the server provides a
-    // response.json method (express), use that directly.
+    // If "pretty" JSON isn't requested, use response.json method.
     // Otherwise use the simplified sendResponse method.
-    if (!pretty && typeof response.json === 'function') {
-      response.json(formattedResult);
+    if (typeof finalOptions !== 'undefined' && finalOptions.pretty === true) {
+      return sendResponse(
+        response,
+        'application/json',
+        JSON.stringify(formattedResult, null, 2),
+      );
     } else {
-      const payload = JSON.stringify(formattedResult, null, pretty ? 2 : 0);
-      sendResponse(response, 'application/json', payload);
+      response.json(formattedResult);
+      return;
     }
+  };
+}
 
-    async function resolveOptions(
-      requestParams?: GraphQLParams,
-    ): Promise<OptionsData> {
-      const optionsResult = await Promise.resolve(
-        typeof options === 'function'
-          ? options(request, response, requestParams)
-          : options,
-      );
+function resolveOptions(options: UserOptions, request: Request): UsableOptions {
+  const mutableOptions = { ...options };
 
-      devAssertIsObject(
-        optionsResult,
-        'GraphQL middleware option function must return an options object or a promise which will be resolved to an options object.',
-      );
+  devAssertIsObject(
+    options,
+    'GraphQL middleware option function must return an options object or a promise which will be resolved to an options object.',
+  );
 
-      if (optionsResult.formatError) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          '`formatError` is deprecated and replaced by `customFormatErrorFn`. It will be removed in version 1.0.0.',
-        );
-      }
+  devAssertIsObject(
+    mutableOptions.schema,
+    'GraphQL middleware options must contain a schema.',
+  );
 
-      return optionsResult;
-    }
+  const defaultGraphiqlOptions = {
+    fetcher: {
+      url:
+        request.protocol +
+        '://' +
+        (request.headers['x-forwarded-host'] ?? request.headers.host) +
+        request.path,
+    },
+  };
+
+  if (typeof mutableOptions.graphiql === 'boolean' || mutableOptions.graphiql === undefined) {
+    mutableOptions.graphiql = defaultGraphiqlOptions;
+  } else {
+    devAssertIsObject(
+      mutableOptions.graphiql,
+      'GraphiQL options must be either a boolean or an object.',
+    );
+    mutableOptions.graphiql = {
+      ...mutableOptions.graphiql,
+      ...{
+        fetcher: {
+          ...defaultGraphiqlOptions.fetcher,
+          ...mutableOptions.graphiql.fetcher,
+        },
+      },
+    };
+  }
+
+  return {
+    schema: mutableOptions.schema,
+    graphiql: mutableOptions.graphiql,
+    rootValue: mutableOptions.rootValue,
+    context: mutableOptions.context ?? request,
+    pretty: mutableOptions.pretty ?? false,
+    extensions: mutableOptions.extensions,
+    validationRules: mutableOptions.validationRules ?? [],
+    validateFn: mutableOptions.validateFn ?? validate,
+    executeFn: mutableOptions.executeFn ?? execute,
+    formatErrorFn: mutableOptions.formatErrorFn,
+    parseFn: mutableOptions.parseFn ?? parse,
+    fieldResolver: mutableOptions.fieldResolver,
+    typeResolver: mutableOptions.typeResolver,
   };
 }
 
 function respondWithGraphiQL(
   response: Response,
-  options?: GraphiQLOptions,
-  params?: GraphQLParams,
-  result?: FormattedExecutionResult,
+  options: CustomGraphiQLProps,
 ): void {
-  const data: GraphiQLData = {
-    query: params?.query,
-    variables: params?.variables,
-    operationName: params?.operationName,
-    result,
-  };
-  const payload = renderGraphiQL(data, options);
+  const payload = renderGraphiQL(options);
   return sendResponse(response, 'text/html', payload);
-}
-
-export interface GraphQLParams {
-  query: string | null;
-  variables: { readonly [name: string]: unknown } | null;
-  operationName: string | null;
-  raw: boolean;
 }
 
 /**
  * Provided a "Request" provided by express, Promise the GraphQL request parameters.
  */
-export async function getGraphQLParams(
-  request: Request,
-): Promise<GraphQLParams> {
+async function getGraphQLParams(request: Request): Promise<GraphQLParams> {
   const urlData = new URLSearchParams(request.url.split('?')[1]);
   const bodyData = await parseBody(request);
 
   // GraphQL Query string.
-  let query = urlData.get('query') ?? (bodyData.query as string | null);
+  let query = urlData.get('query') ?? bodyData['query'];
   if (typeof query !== 'string') {
     query = null;
   }
 
   // Parse the variables if needed.
-  let variables = (urlData.get('variables') ?? bodyData.variables) as {
-    readonly [name: string]: unknown;
-  } | null;
+  let variables = urlData.get('variables') ?? bodyData['variables'];
   if (typeof variables === 'string') {
     try {
       variables = JSON.parse(variables);
@@ -500,15 +334,19 @@ export async function getGraphQLParams(
   }
 
   // Name of GraphQL operation to execute.
-  let operationName =
-    urlData.get('operationName') ?? (bodyData.operationName as string | null);
+  let operationName = urlData.get('operationName') ?? bodyData['operationName'];
   if (typeof operationName !== 'string') {
     operationName = null;
   }
 
-  const raw = urlData.get('raw') != null || bodyData.raw !== undefined;
+  const raw = urlData.get('raw') != null || bodyData['raw'] !== undefined;
 
-  return { query, variables, operationName, raw };
+  return {
+    query: query as string | null,
+    variables: variables as { [name: string]: unknown } | null,
+    operationName: operationName as string | null,
+    raw,
+  };
 }
 
 /**
@@ -517,7 +355,7 @@ export async function getGraphQLParams(
 function canDisplayGraphiQL(request: Request, params: GraphQLParams): boolean {
   // If `raw` false, GraphiQL mode is not enabled.
   // Allowed to show GraphiQL if not requested as raw and this request prefers HTML over JSON.
-  return !params.raw && request.accepts(['json', 'html']) === 'html';
+  return params.raw === false && request.accepts(['json', 'html']) === 'html';
 }
 
 /**
@@ -540,7 +378,7 @@ function devAssertIsNonNullable(value: unknown, message: string): void {
 
 function devAssert(condition: unknown, message: string): void {
   const booleanCondition = Boolean(condition);
-  if (!booleanCondition) {
+  if (booleanCondition === false) {
     throw new TypeError(message);
   }
 }

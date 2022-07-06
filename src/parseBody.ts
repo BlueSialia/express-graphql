@@ -1,10 +1,9 @@
-import type { Gunzip, Inflate } from 'zlib';
-import zlib from 'zlib';
-
 import type { ParsedMediaType } from 'content-type';
 import contentType from 'content-type';
 import type { Request } from 'express';
 import httpError from 'http-errors';
+import type { Gunzip, Inflate } from 'zlib';
+import zlib from 'zlib';
 
 /**
  * Provided a "Request" provided by express or connect (typically a node style
@@ -87,7 +86,7 @@ async function readBody(
   req: Request,
   typeInfo: ParsedMediaType,
 ): Promise<string> {
-  const charset = typeInfo.parameters.charset?.toLowerCase() ?? 'utf-8';
+  const charset = typeInfo.parameters['charset']?.toLowerCase() ?? 'utf-8';
 
   // Assert charset encoding per JSON RFC 7159 sec 8.1
   if (charset !== 'utf8' && charset !== 'utf-8' && charset !== 'utf16le') {

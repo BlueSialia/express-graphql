@@ -2,12 +2,12 @@ import express from 'express';
 import { execute, subscribe } from 'graphql';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { createServer } from 'http';
-import ws from 'ws';
-import { graphqlHTTP } from '..';
-import { roots, rootValue, schema } from './schema';
+import { roots, rootValue, schema } from 'examples/schema';
+import { graphqlHTTP } from 'index';
+import { WebSocketServer } from 'ws';
 
 const PORT = 12000;
-const subscriptionEndpoint = `ws://localhost:${PORT}/subscriptions`;
+const subscriptionUrl = `ws://localhost:${PORT}/subscriptions`;
 
 const app = express();
 app.use(
@@ -15,13 +15,18 @@ app.use(
   graphqlHTTP({
     schema,
     rootValue,
-    graphiql: { subscriptionEndpoint },
+    graphiql: {
+      fetcher: {
+        url: `http://localhost:${PORT}/graphql`,
+        subscriptionUrl,
+      },
+    },
   }),
 );
 
 const server = createServer(app);
 
-const wsServer = new ws.Server({
+const wsServer = new WebSocketServer({
   server,
   path: '/subscriptions',
 });

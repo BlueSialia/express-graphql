@@ -1,6 +1,6 @@
 import express from 'express';
 import { buildSchema } from 'graphql';
-import { graphqlHTTP } from '..';
+import { graphqlHTTP } from 'index';
 
 const PORT = 12000;
 
@@ -22,7 +22,7 @@ app.use(
   graphqlHTTP({
     schema,
     rootValue,
-    graphiql: { headerEditorEnabled: true },
+    graphiql: true,
   }),
 );
 app.listen(PORT);

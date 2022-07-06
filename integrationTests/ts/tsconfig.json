@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "lib": ["es6", "esnext.asynciterable"],
+    "lib": ["ES2020", "dom"],
+    "module": "ES2020",
+    "moduleResolution": "Node",
     "strict": true,
     "noEmit": true
   }
