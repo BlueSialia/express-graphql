@@ -1,4 +1,15 @@
-import type { CustomGraphiQLProps } from 'interfaces';
+import type { CustomGraphiQLProps, GraphQLParams } from 'interfaces';
+
+/**
+ * Ensures string values are safe to be used within a <script> tag.
+ */
+function safeSerialize(
+  data: { [name: string]: unknown } | string | boolean | undefined,
+): string {
+  return data !== undefined
+    ? JSON.stringify(data).replace(/\//g, '\\/')
+    : 'undefined';
+}
 
 /**
  * Compile time function. @See ./resources/customTransformation.ts
@@ -13,9 +24,13 @@ declare function loadFileStaticallyFromNPM(npmPath: string): string;
  * requested query.
  */
 export function renderGraphiQL(
+  data: GraphQLParams,
   props: CustomGraphiQLProps,
   polyfill = false,
 ): string {
+  props.query = safeSerialize(data.query);
+  props.variables = safeSerialize(data.variables);
+  props.operationName = safeSerialize(data.operationName);
   let propsString = '';
   for (const prop in props) {
     if (

@@ -173,12 +173,12 @@ export interface RequestInfo {
   /**
    * The variable values used at runtime.
    */
-  variables: { readonly [name: string]: unknown } | null;
+  variables?: { readonly [name: string]: unknown };
 
   /**
    * The (optional) operation name requested.
    */
-  operationName: string | null;
+  operationName?: string;
 
   /**
    * The result of executing the operation.
@@ -192,9 +192,9 @@ export interface RequestInfo {
 }
 
 export interface GraphQLParams {
-  query: string | null;
-  variables: { readonly [name: string]: unknown } | null;
-  operationName: string | null;
+  query?: string;
+  variables?: { readonly [name: string]: unknown };
+  operationName?: string;
   raw: boolean;
 }
 
@@ -219,7 +219,7 @@ export type GraphiQLProps = {
   /**
    * Optionally provide the `GraphQLSchema`. If present, GraphiQL skips schema introspection.
    */
-  schema?: GraphQLSchema | null;
+  schema?: GraphQLSchema;
   /**
    * An array of graphql ValidationRules
    */
@@ -392,7 +392,7 @@ export type GraphiQLProps = {
   /**
    * Content to place before the top bar (logo).
    */
-  beforeTopBarContent?: unknown | null;
+  beforeTopBarContent?: unknown;
 
   /**
    * Whether tabs should be enabled.

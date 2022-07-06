@@ -52,7 +52,8 @@ export function graphqlHTTP(
       else userOptions = await options(request, response);
       finalOptions = resolveOptions(userOptions, request);
       params = await getGraphQLParams(request);
-      if (typeof options === 'function') userOptions = await options(request, response, params);
+      if (typeof options === 'function')
+        userOptions = await options(request, response, params);
       finalOptions = resolveOptions(userOptions, request);
       const { query, variables, operationName } = params;
 
@@ -68,15 +69,11 @@ export function graphqlHTTP(
 
       // If allowed to show GraphiQL, present it instead of JSON.
       if (showGraphiQL) {
-        if (query == null) {
-          return respondWithGraphiQL(response, finalOptions.graphiql);
-        } else {
-          return response.redirect(request.path);
-        }
+        return respondWithGraphiQL(response, params, finalOptions.graphiql);
       }
 
       // If there is no query return a 400: Bad Request.
-      if (query == null) {
+      if (query === undefined) {
         throw httpError(400, 'Must provide query string.');
       }
 
@@ -121,7 +118,7 @@ export function graphqlHTTP(
           // provide it to GraphiQL so that the requester may perform it
           // themselves if desired.
           if (showGraphiQL)
-            return respondWithGraphiQL(response, finalOptions.graphiql);
+            return respondWithGraphiQL(response, params, finalOptions.graphiql);
 
           // Otherwise, report a 405: Method Not Allowed error.
           throw httpError(
@@ -161,7 +158,7 @@ export function graphqlHTTP(
           context: finalOptions.context,
         });
 
-        if (extensions != null) {
+        if (extensions !== undefined) {
           result = { ...result, extensions };
         }
       }
@@ -184,7 +181,7 @@ export function graphqlHTTP(
           status = (error.originalError as httpError.HttpError)?.status ?? 500;
         } else if (error instanceof httpError.HttpError) {
           status = error.status;
-          if (error.headers != null) {
+          if (error.headers !== undefined) {
             for (const [key, value] of Object.entries(error.headers)) {
               response.setHeader(key, String(value));
             }
@@ -207,10 +204,7 @@ export function graphqlHTTP(
         }
 
         // Ensure code is an error code.
-        if (
-          response.statusCode === undefined ||
-          response.statusCode < 400
-        ) {
+        if (response.statusCode === undefined || response.statusCode < 400) {
           response.statusCode = status;
         }
 
@@ -261,11 +255,14 @@ function resolveOptions(options: UserOptions, request: Request): UsableOptions {
         request.protocol +
         '://' +
         (request.headers['x-forwarded-host'] ?? request.headers.host) +
-        request.path,
+        request.originalUrl.split('?')[0],
     },
   };
 
-  if (typeof mutableOptions.graphiql === 'boolean' || mutableOptions.graphiql === undefined) {
+  if (
+    typeof mutableOptions.graphiql === 'boolean' ||
+    mutableOptions.graphiql === undefined
+  ) {
     mutableOptions.graphiql = defaultGraphiqlOptions;
   } else {
     devAssertIsObject(
@@ -302,9 +299,10 @@ function resolveOptions(options: UserOptions, request: Request): UsableOptions {
 
 function respondWithGraphiQL(
   response: Response,
+  params: GraphQLParams,
   options: CustomGraphiQLProps,
 ): void {
-  const payload = renderGraphiQL(options);
+  const payload = renderGraphiQL(params, options);
   return sendResponse(response, 'text/html', payload);
 }
 
@@ -318,7 +316,7 @@ async function getGraphQLParams(request: Request): Promise<GraphQLParams> {
   // GraphQL Query string.
   let query = urlData.get('query') ?? bodyData['query'];
   if (typeof query !== 'string') {
-    query = null;
+    query = undefined;
   }
 
   // Parse the variables if needed.
@@ -330,21 +328,21 @@ async function getGraphQLParams(request: Request): Promise<GraphQLParams> {
       throw httpError(400, 'Variables are invalid JSON.');
     }
   } else if (typeof variables !== 'object') {
-    variables = null;
+    variables = undefined;
   }
 
   // Name of GraphQL operation to execute.
   let operationName = urlData.get('operationName') ?? bodyData['operationName'];
   if (typeof operationName !== 'string') {
-    operationName = null;
+    operationName = undefined;
   }
 
-  const raw = urlData.get('raw') != null || bodyData['raw'] !== undefined;
+  const raw = urlData.get('raw') !== null || bodyData['raw'] !== undefined;
 
   return {
-    query: query as string | null,
-    variables: variables as { [name: string]: unknown } | null,
-    operationName: operationName as string | null,
+    query: query as string,
+    variables: variables as { [name: string]: unknown },
+    operationName: operationName as string,
     raw,
   };
 }

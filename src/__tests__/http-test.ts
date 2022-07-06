@@ -516,8 +516,8 @@ function runTests(server: Server) {
       expect(seenResponse).to.not.equal(null);
       expect(seenParams).to.deep.equal({
         query: '{test}',
-        operationName: null,
-        variables: null,
+        operationName: undefined,
+        variables: undefined,
         raw: false,
       });
     });
@@ -1646,7 +1646,7 @@ function runTests(server: Server) {
         .get(urlString({ query: '</script><script>alert(1)</script>' }))
         .set('Accept', 'text/html');
 
-      expect(response.status).to.equal(400);
+      expect(response.status).to.equal(200);
       expect(response.type).to.equal('text/html');
       expect(response.text).to.not.include(
         '</script><script>alert(1)</script>',
