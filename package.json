@@ -38,6 +38,7 @@
     "prettier:check": "prettier --check .",
     "build": "ttsc && tsc-alias",
     "build:check": "ttsc --noEmit",
+    "prepack": "npm run build",
     "start": "node --inspect dist/examples/index.js",
     "start:subscription": "node --inspect dist/examples/index_subscription.js"
   },
