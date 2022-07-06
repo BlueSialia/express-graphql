@@ -1,6 +1,6 @@
 {
   "name": "@bluesialia/express-graphql",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "type": "module",
   "description": "Production ready GraphQL HTTP middleware.",
   "author": "Jorge Domínguez Arnáez (BlueSialia) <bluesialia@gmail.com>",
@@ -38,7 +38,6 @@
     "prettier:check": "prettier --check .",
     "build": "ttsc && tsc-alias",
     "build:check": "ttsc --noEmit",
-    "prepack": "npm run build",
     "start": "node --inspect dist/examples/index.js",
     "start:subscription": "node --inspect dist/examples/index_subscription.js"
   },
