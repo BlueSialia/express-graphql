@@ -1,3 +1,4 @@
+/.vscode
 /dist/__tests__
 /dist/examples
 /integrationTests
