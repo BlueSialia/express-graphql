@@ -42,5 +42,8 @@ middleware(req, res).then(() => {
     'Content-Length': '40',
     'Content-Type': 'application/json; charset=utf-8',
   });
-  assert.deepStrictEqual(res.text, '{\n  "data": {\n    "hello": "world"\n  }\n}');
+  assert.deepStrictEqual(
+    res.text,
+    '{\n  "data": {\n    "hello": "world"\n  }\n}',
+  );
 });

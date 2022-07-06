@@ -1683,6 +1683,34 @@ function runTests(server: Server) {
       );
     });
 
+    it('GraphiQL renders provided variables', async () => {
+      const app = server();
+
+      app.get(
+        urlString(),
+        graphqlHTTP({
+          schema: TestSchema,
+          graphiql: true,
+        }),
+      );
+
+      const response = await app
+        .request()
+        .get(
+          urlString({
+            query: 'query helloWho($who: String) { test(who: $who) }',
+            variables: JSON.stringify({ who: 'Dolly' }),
+          }),
+        )
+        .set('Accept', 'text/html');
+
+      expect(response.status).to.equal(200);
+      expect(response.type).to.equal('text/html');
+      expect(response.text).to.include(
+        'variables: ' + JSON.stringify(JSON.stringify({ who: 'Dolly' })),
+      );
+    });
+
     it('GraphiQL accepts an empty query', async () => {
       const app = server();
 
@@ -1703,6 +1731,33 @@ function runTests(server: Server) {
       expect(response.type).to.equal('text/html');
       expect(response.text).to.include(
         'The request to this GraphQL server provided the header',
+      );
+    });
+
+    it('GraphiQL accepts a mutation query - does not execute it', async () => {
+      const app = server();
+
+      app.get(
+        urlString(),
+        graphqlHTTP({
+          schema: TestSchema,
+          graphiql: true,
+        }),
+      );
+
+      const response = await app
+        .request()
+        .get(
+          urlString({
+            query: 'mutation TestMutation { writeTest { test } }',
+          }),
+        )
+        .set('Accept', 'text/html');
+
+      expect(response.status).to.equal(200);
+      expect(response.type).to.equal('text/html');
+      expect(response.text).to.include(
+        'query: "\\"mutation TestMutation { writeTest { test } }\\""',
       );
     });
 
