@@ -31,50 +31,100 @@ This module includes a [TypeScript](https://www.typescriptlang.org/) declaration
 
 Just mount `express-graphql` as a route handler:
 
-```js
-const express = require('express');
-const { graphqlHTTP } = require('@bluesialia/express-graphql');
+```ts
+import { graphqlHTTP } from '@bluesialia/express-graphql';
+import express from 'express';
+import { buildSchema } from 'graphql';
+
+const PORT = 12000;
+
+// Construct a schema, using GraphQL schema language
+const schema = buildSchema(`
+  type Query {
+    hello: String
+  }
+`);
+
+// The root provides a resolver function for each API endpoint
+const rootValue = {
+  hello: () => 'Hello world!',
+};
 
 const app = express();
-
-app.use(
-  '/graphql',
-  graphqlHTTP({
-    schema: MyGraphQLSchema,
-    graphiql: true,
-  }),
-);
-
-app.listen(4000);
-```
-
-## Setup with Subscription Support
-
-```js
-const { graphqlHTTP } = require('@bluesialia/express-graphql');
-const express = require('express');
-const { execute, subscribe } = require('graphql');
-const { useServer } = require('graphql-ws/lib/use/ws');
-const { createServer } = require('http');
-const ws = require('ws');
-const { schema } = require('./schema');
-
-const PORT = 4000;
-const subscriptionEndpoint = `ws://localhost:${PORT}/subscriptions`;
-
-const app = express();
-
 app.use(
   '/graphql',
   graphqlHTTP({
     schema,
-    graphiql: { subscriptionEndpoint },
+    rootValue,
+    graphiql: true,
+  }),
+);
+app.listen(PORT);
+```
+
+## Setup with Subscription Support
+
+```ts
+import { graphqlHTTP } from '@bluesialia/express-graphql';
+import express from 'express';
+import { buildSchema, execute, subscribe } from 'graphql';
+import { useServer } from 'graphql-ws/lib/use/ws';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const PORT = 12000;
+const subscriptionUrl = `ws://localhost:${PORT}/subscriptions`;
+
+// Construct a schema, using GraphQL schema language
+const schema = buildSchema(`
+  type Query {
+    hello: String
+  }
+  type Subscription {
+    countDown: Int
+  }
+`);
+
+// The root provides a resolver function for each API endpoint
+const roots = {
+  Query: {
+    hello: () => 'Hello World!',
+  },
+  subscription: {
+    countDown: async function* fiveToOne() {
+      for (const number of [5, 4, 3, 2, 1]) {
+        await sleep(1000);
+        yield { countDown: number };
+      }
+    },
+  },
+};
+
+const rootValue = {
+  hello: roots.Query.hello,
+  countDown: roots.subscription.countDown,
+};
+
+const app = express();
+app.use(
+  '/graphql',
+  graphqlHTTP({
+    schema,
+    rootValue,
+    graphiql: {
+      fetcher: {
+        url: `http://localhost:${PORT}/graphql`,
+        subscriptionUrl,
+      },
+    },
   }),
 );
 
 const server = createServer(app);
 
-const wsServer = new ws.Server({
+const wsServer = new WebSocketServer({
   server,
   path: '/subscriptions',
 });
@@ -84,9 +134,11 @@ server.listen(PORT, () => {
   useServer(
     {
       schema,
+      roots,
       execute,
       subscribe,
     },
+    wsServer,
   );
 });
 ```
@@ -113,17 +165,15 @@ The `graphqlHTTP` function accepts the following options:
 
 - **`extensions`**: An optional function for adding additional metadata to the GraphQL response as a key-value object. The result will be added to the `"extensions"` field in the resulting JSON. This is often a useful place to add development time metadata such as the runtime of a query or the amount of resources consumed. This may be an async function. The function is given one object as an argument: `{ document, variables, operationName, result, context }`.
 
-- **`validationRules`**: An optional array of validation rules that will be applied on the document in additional to those defined by the GraphQL spec.
+- **`validationRules`**: An optional array of validation rules that will be applied on the document in addition to those defined by the GraphQL spec.
 
-- **`customValidateFn`**: An optional function which will be used to validate instead of default `validate` from `graphql-js`.
+- **`validateFn`**: An optional function which will be used to validate instead of default `validate` from `graphql-js`.
 
-- **`customExecuteFn`**: An optional function which will be used to execute instead of default `execute` from `graphql-js`.
+- **`executeFn`**: An optional function which will be used to execute instead of default `execute` from `graphql-js`.
 
-- **`customFormatErrorFn`**: An optional function which will be used to format any errors produced by fulfilling a GraphQL operation. If no function is provided, GraphQL's default spec-compliant [`formatError`][] function will be used.
+- **`formatErrorFn`**: An optional function which will be used to format any errors produced by fulfilling a GraphQL operation. If no function is provided, GraphQL's default function will be used.
 
-- **`customParseFn`**: An optional function which will be used to create a document instead of the default `parse` from `graphql-js`.
-
-- **`formatError`**: is deprecated and replaced by `customFormatErrorFn`. It will be removed in version 1.0.0.
+- **`parseFn`**: An optional function which will be used to create a document instead of the default `parse` from `graphql-js`.
 
 In addition to an object defining each option, options can also be provided as a function (or async function) which returns this options object. This function is provided the arguments `(request, response, graphQLParams)` and is called after the request has been parsed.
 
@@ -176,9 +226,10 @@ By default, the express request is passed as the GraphQL `context`. Since most e
 
 This example uses [`express-session`][] to provide GraphQL with the currently logged-in session.
 
-```js
-const session = require('express-session');
-const { graphqlHTTP } = require('@bluesialia/express-graphql');
+```ts
+import { graphqlHTTP } from '@bluesialia/express-graphql';
+import express from 'express';
+import session from 'express-session';
 
 const app = express();
 
@@ -195,7 +246,7 @@ app.use(
 
 Then in your type definitions, you can access the request via the third "context" argument in your `resolve` function:
 
-```js
+```ts
 new GraphQLObjectType({
   name: 'MyType',
   fields: {
@@ -219,8 +270,9 @@ When called, this is provided an argument which you can use to get information a
 
 This example illustrates adding the amount of time consumed by running the provided query, which could perhaps be used by your development tools.
 
-```js
-const { graphqlHTTP } = require('@bluesialia/express-graphql');
+```ts
+import { graphqlHTTP } from '@bluesialia/express-graphql';
+import express from 'express';
 
 const app = express();
 
@@ -266,7 +318,7 @@ GraphQL's [validation phase](https://spec.graphql.org/#sec-Validation) checks th
 
 A validation rule is a function which returns a visitor for one or more node Types. Below is an example of a validation preventing the specific field name `metadata` from being queried. For more examples, see the [`specifiedRules`](https://github.com/graphql/graphql-js/tree/main/src/validation/rules) in the [graphql-js](https://github.com/graphql/graphql-js) package.
 0
-```js
+```ts
 import { GraphQLError } from 'graphql';
 
 export function DisallowMetadataQueries(context) {
@@ -290,7 +342,7 @@ export function DisallowMetadataQueries(context) {
 
 Disabling introspection does not reflect best practices and does not necessarily make your application any more secure. Nevertheless, disabling introspection is possible by utilizing the `NoSchemaIntrospectionCustomRule` provided by the [graphql-js](https://github.com/graphql/graphql-js) package.
 
-```js
+```ts
 import { NoSchemaIntrospectionCustomRule } from 'graphql';
 
 app.use(
@@ -310,8 +362,8 @@ app.use(
 
 Given an HTTP Request, this returns a Promise for the parameters relevant to running a GraphQL request. This function is used internally to handle the incoming request, you may use it directly for building other similar services.
 
-```js
-const { getGraphQLParams } = require('@bluesialia/express-graphql');
+```ts
+import { getGraphQLParams } from '@bluesialia/express-graphql';
 
 getGraphQLParams(request).then((params) => {
   // do something...
@@ -320,10 +372,10 @@ getGraphQLParams(request).then((params) => {
 
 ## Debugging Tips
 
-During development, it's useful to get more information from errors, such as stack traces. Providing a function to `customFormatErrorFn` enables this:
+During development, it's useful to get more information from errors, such as stack traces. Providing a function to `formatErrorFn` enables this:
 
-```js
-customFormatErrorFn: (error) => ({
+```ts
+formatErrorFn: (error) => ({
   message: error.message,
   locations: error.locations,
   stack: error.stack ? error.stack.split('\n') : [],
