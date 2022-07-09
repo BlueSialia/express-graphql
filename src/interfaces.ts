@@ -99,7 +99,7 @@ interface Options {
   ) => MaybePromise<undefined | { [key: string]: unknown }>;
 
   /**
-   * An optional array of validation rules that will be applied on the document in additional to those defined by the GraphQL spec.
+   * An optional array of validation rules that will be applied on the document in addition to those defined by the GraphQL spec.
    */
   validationRules: ReadonlyArray<ValidationRule>;
 
@@ -120,7 +120,7 @@ interface Options {
   /**
    * An optional function which will be used to format any errors produced by
    * fulfilling a GraphQL operation. If no function is provided, GraphQL's
-   * default spec-compliant `formatError` function will be used.
+   * default function will be used.
    */
   formatErrorFn?: (error: GraphQLError) => GraphQLFormattedError;
 
