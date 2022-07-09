@@ -252,7 +252,7 @@ export type GraphiQLProps = {
    * [`Storage`](https://graphiql-test.netlify.app/typedoc/interfaces/graphiql.storage.html
    * default: StorageAPI
    */
-  storage?: Storage;
+  storage?: unknown;
   /**
    * The defaultQuery present when the editor is first loaded
    * and the user has no local query editing state
@@ -458,7 +458,7 @@ export interface CreateFetcherOptions {
    * or other purposes. this does not override the `fetch-multipart-graphql`
    * default fetch behavior yet.
    */
-  fetch?: typeof fetch;
+  fetch?: unknown;
   /**
    * An optional custom fetcher specifically for your schema. For most cases
    * the `url` and `headers` property should have you covered.
