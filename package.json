@@ -1,6 +1,6 @@
 {
   "name": "@bluesialia/express-graphql",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "type": "module",
   "description": "Production ready GraphQL HTTP middleware.",
   "author": "Jorge Domínguez Arnáez (BlueSialia) <bluesialia@gmail.com>",
