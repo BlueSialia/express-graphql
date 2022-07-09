@@ -28,7 +28,7 @@
     "node": ">= 16.x"
   },
   "scripts": {
-    "preversion": ". ./resources/checkgit.sh && npm ci",
+    "preversion": "./resources/checkgit.sh && npm ci",
     "version": "npm test",
     "test": "npm run cspell && npm run lint && npm run prettier:check && npm run build && npm run test:integrations && npm run test:units",
     "test:integrations": "mocha --full-trace integrationTests/index.js",
