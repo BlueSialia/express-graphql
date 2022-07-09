@@ -1,14 +1,14 @@
 # GraphQL HTTP Server Middleware
 
-[![NPM version](https://badgen.net/npm/v/@bluesialia/express-graphql?icon=npm&label)](https://www.npmjs.com/package/@bluesialia/express-graphql)
-[![Node version](https://badgen.net/npm/node/@bluesialia/express-graphql?icon=https://nodejs.org/static/images/logo.svg&label)](https://nodejs.org/en/)
+[![NPM version](https://badgen.net/npm/v/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/brands/npm.svg&label)](https://www.npmjs.com/package/@bluesialia/express-graphql)
+[![Node version](https://badgen.net/npm/node/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/brands/node-js.svg&label)](https://nodejs.org/en/)
 ![Typescript types](https://badgen.net/npm/types/@bluesialia/express-graphql?icon=typescript&label)
-[![LICENSE](https://badgen.net/npm/license/@bluesialia/express-graphql?icon=https://upload.wikimedia.org/wikipedia/commons/c/c3/License_icon-mit.svg&label)](LICENSE)
+[![LICENSE](https://badgen.net/npm/license/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/copyright.svg&label)](LICENSE)
 
 
-[![Package size](https://badgen.net/bundlephobia/min/@bluesialia/express-graphql)](https://bundlephobia.com/package/@bluesialia/express-graphql)
-[![Zipped package size](https://badgen.net/bundlephobia/minzip/@bluesialia/express-graphql)](https://bundlephobia.com/package/@bluesialia/express-graphql)
-[![Dependencies](https://badgen.net/bundlephobia/dependency-count/@bluesialia/express-graphql)](https://www.npmjs.com/package/@bluesialia/express-graphql?activeTab=dependencies)
+[![Package size](https://badgen.net/bundlephobia/min/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/file.svg&label)](https://bundlephobia.com/package/@bluesialia/express-graphql)
+[![Zipped package size](https://badgen.net/bundlephobia/minzip/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/file-zipper.svg&label)](https://bundlephobia.com/package/@bluesialia/express-graphql)
+[![Dependencies](https://badgen.net/bundlephobia/dependency-count/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/diagram-project.svg&label)](https://www.npmjs.com/package/@bluesialia/express-graphql?activeTab=dependencies)
 
 Create a GraphQL HTTP server with [Express](https://expressjs.com).
 
