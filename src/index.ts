@@ -309,7 +309,9 @@ function respondWithGraphiQL(
 /**
  * Provided a "Request" provided by express, Promise the GraphQL request parameters.
  */
-export async function getGraphQLParams(request: Request): Promise<GraphQLParams> {
+export async function getGraphQLParams(
+  request: Request,
+): Promise<GraphQLParams> {
   const urlData = new URLSearchParams(request.url.split('?')[1]);
   const bodyData = await parseBody(request);
 
