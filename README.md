@@ -6,6 +6,7 @@
 [![LICENSE](https://badgen.net/npm/license/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/copyright.svg&label)](LICENSE)
 
 
+[![Tests](https://badgen.net/github/checks/bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/flask-vial.svg&label)](https://github.com/BlueSialia/express-graphql/actions/workflows/node.js.yml)
 [![Package size](https://badgen.net/bundlephobia/min/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/file.svg&label)](https://bundlephobia.com/package/@bluesialia/express-graphql)
 [![Zipped package size](https://badgen.net/bundlephobia/minzip/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/file-zipper.svg&label)](https://bundlephobia.com/package/@bluesialia/express-graphql)
 [![Dependencies](https://badgen.net/bundlephobia/dependency-count/@bluesialia/express-graphql?icon=https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/diagram-project.svg&label)](https://www.npmjs.com/package/@bluesialia/express-graphql?activeTab=dependencies)
