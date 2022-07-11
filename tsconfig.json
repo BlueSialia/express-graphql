@@ -28,7 +28,7 @@
 		"noUnusedParameters": true,
 		"plugins": [
 			{
-				"transform": "/home/bluesialia/Desktop/express-graphql/resources/customTransformation.ts"
+				"transform": "./resources/customTransformation.ts"
 			}
 		]
 	},
