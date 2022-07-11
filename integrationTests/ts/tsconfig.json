@@ -1,9 +1,9 @@
 {
-  "compilerOptions": {
-    "lib": ["ES2020", "dom"],
-    "module": "ES2020",
-    "moduleResolution": "Node",
-    "strict": true,
-    "noEmit": true
-  }
+	"compilerOptions": {
+		"lib": ["ES2020", "dom"],
+		"module": "ES2020",
+		"moduleResolution": "Node",
+		"strict": true,
+		"noEmit": true
+	}
 }

@@ -11,37 +11,37 @@ const subscriptionUrl = `ws://localhost:${PORT}/subscriptions`;
 
 const app = express();
 app.use(
-  '/graphql',
-  graphqlHTTP({
-    schema,
-    rootValue,
-    graphiql: {
-      fetcher: {
-        url: `http://localhost:${PORT}/graphql`,
-        subscriptionUrl,
-      },
-    },
-  }),
+	'/graphql',
+	graphqlHTTP({
+		schema,
+		rootValue,
+		graphiql: {
+			fetcher: {
+				url: `http://localhost:${PORT}/graphql`,
+				subscriptionUrl,
+			},
+		},
+	}),
 );
 
 const server = createServer(app);
 
 const wsServer = new WebSocketServer({
-  server,
-  path: '/subscriptions',
+	server,
+	path: '/subscriptions',
 });
 
 server.listen(PORT, () => {
-  useServer(
-    {
-      schema,
-      roots,
-      execute,
-      subscribe,
-    },
-    wsServer,
-  );
-  console.info(
-    `Running a GraphQL API server with subscriptions at http://localhost:${PORT}/graphql`,
-  );
+	useServer(
+		{
+			schema,
+			roots,
+			execute,
+			subscribe,
+		},
+		wsServer,
+	);
+	console.info(
+		`Running a GraphQL API server with subscriptions at http://localhost:${PORT}/graphql`,
+	);
 });

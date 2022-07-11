@@ -1,37 +1,37 @@
 {
-  "language": "en",
-  "ignorePaths": [
-    // Copied from '.gitignore', please keep it in sync.
-    ".vscode",
-    "dist",
-    "node_modules",
-    "*.tgz",
+	"language": "en",
+	"ignorePaths": [
+		// Copied from '.gitignore', please keep it in sync.
+		".vscode",
+		"dist",
+		"node_modules",
+		"*.tgz",
 
-    // Excluded from spelling check
-    ".eslintcache",
-    "cspell.json",
-    "LICENSE",
-    "package.json",
-    "package-lock.json",
-    "tsconfig.json"
-  ],
-  "words": [
-    "bluesialia",
-    "charsets",
-    "codecov",
-    "crossorigin",
-    "downlevel",
-    "graphiql",
-    "noindex",
-    "overriden",
-    "pollyfill",
-    "recognise",
-    "serializable",
-    "subcommand",
-    "subcriptions",
-    "unfetch",
-    "websockets",
-    "Graphi",
-    "QL's"
-  ]
+		// Excluded from spelling check
+		".eslintcache",
+		"cspell.json",
+		"LICENSE",
+		"package.json",
+		"package-lock.json",
+		"tsconfig.json"
+	],
+	"words": [
+		"bluesialia",
+		"charsets",
+		"codecov",
+		"crossorigin",
+		"downlevel",
+		"graphiql",
+		"noindex",
+		"overriden",
+		"pollyfill",
+		"recognise",
+		"serializable",
+		"subcommand",
+		"subcriptions",
+		"unfetch",
+		"websockets",
+		"Graphi",
+		"QL's"
+	]
 }
