@@ -40,9 +40,9 @@ describe('Integration Tests', () => {
 
 	it('Should compile with all supported TS versions', () => {
 		testOnNodeProject('ts');
-	}).timeout(40000);
+	}).timeout(60 * 1000);
 
 	it('Should work on all supported node versions', () => {
 		testOnNodeProject('node');
-	}).timeout(40000);
+	}).timeout(60 * 1000);
 });
