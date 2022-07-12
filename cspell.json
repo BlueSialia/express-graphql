@@ -2,6 +2,7 @@
 	"language": "en",
 	"ignorePaths": [
 		// Copied from '.gitignore', please keep it in sync.
+		".github",
 		".vscode",
 		"dist",
 		"node_modules",
