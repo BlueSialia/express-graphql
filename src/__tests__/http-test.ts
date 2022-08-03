@@ -1729,9 +1729,7 @@ function runTests(server: Server) {
 
 			expect(response.status).to.equal(200);
 			expect(response.type).to.equal('text/html');
-			expect(response.text).to.include(
-				'Welcome to GraphiQL',
-			);
+			expect(response.text).to.include('Welcome to GraphiQL');
 		});
 
 		it('GraphiQL accepts a mutation query - does not execute it', async () => {
