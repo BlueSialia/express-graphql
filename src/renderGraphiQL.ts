@@ -5,10 +5,10 @@ import type { CustomGraphiQLProps, GraphQLParams } from 'interfaces';
  */
 function safeSerialize(
 	data: { [name: string]: unknown } | string | boolean | undefined,
-): string {
+): string | undefined {
 	return data !== undefined
 		? JSON.stringify(data).replace(/\//g, '\\/')
-		: 'undefined';
+		: undefined;
 }
 
 /**

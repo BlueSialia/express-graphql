@@ -1730,7 +1730,7 @@ function runTests(server: Server) {
 			expect(response.status).to.equal(200);
 			expect(response.type).to.equal('text/html');
 			expect(response.text).to.include(
-				'The request to this GraphQL server provided the header',
+				'Welcome to GraphiQL',
 			);
 		});
 
