@@ -150,13 +150,15 @@ The `graphqlHTTP` function accepts the following options:
 
 - **`schema`**: A `GraphQLSchema` instance from [`GraphQL.js`](https://github.com/graphql/graphql-js/blob/main/src/type/schema.ts#L135). A `schema` _must_ be provided.
 
-- **`graphiql`**: A boolean to optionally enable [GraphiQL](https://github.com/graphql/graphiql/tree/main/packages/graphiql) when the GraphQL endpoint is loaded in a browser. We recommend that you set `graphiql` to `true` when your app is in development, because it's quite useful. You may or may not want it in production. Alternatively, instead of `true` you can pass in a GraphiQLProps object:
+- **`graphiql`**: A boolean to optionally enable [GraphiQL](https://github.com/graphql/graphiql/tree/main/packages/graphiql) when the GraphQL endpoint is loaded in a browser. We recommend that you set `graphiql` to `true` when your app is in development, because it's quite useful. You may or may not want it in production. Alternatively, instead of `true` you can pass in an altered [GraphiQLProps](https://github.com/graphql/graphiql/blob/main/packages/graphiql/src/components/GraphiQL.tsx#L97) object:
 
-  - **`defaultQuery`**: An optional GraphQL string to use when no query is provided and no stored query exists from a previous session. If `undefined` is provided, GraphiQL will use its own default query.
+  - **`fetcher`**: GraphiQLProps requires a `fetcher` property that evaluates to a Fetcher object. In express-graphql's case the `fetcher` property contains an object containing the following properties that will be used to create the Fetcher object:
 
-  - **`headerEditorEnabled`**: An optional boolean which enables the header editor when `true`. Defaults to `false`.
+    - **`url`**: URL for HTTP(S) requests. Required if you provide a `fetcher` property. Otherwise, the URL where you exposed the GraphiQL will be used.
 
-  - **`subscriptionEndpoint`**: An optional GraphQL string contains the WebSocket server url for subscription.
+    - **`subscriptionUrl`**: URL for websocket subscription requests.
+
+    - **`headers`**: Headers you can provide statically. If you enable the headers editor and the user provides a header you set statically here, it will be overriden by their value.
 
 - **`rootValue`**: A value to pass as the `rootValue` to the `execute()` function from [`GraphQL.js/src/execution/execute.ts`](https://github.com/graphql/graphql-js/blob/main/src/execution/execute.ts#148).
 
