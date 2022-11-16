@@ -1,10 +1,9 @@
-import express from 'express';
-import request from 'supertest';
 import { expect } from 'chai';
-import { describe, it } from 'mocha';
+import express from 'express';
 import { GraphQLSchema } from 'graphql';
-
-import { graphqlHTTP } from '../index';
+import { describe, it } from 'mocha';
+import request from 'supertest';
+import { graphqlHTTP } from '../index.js';
 
 describe('Useful errors when incorrectly used', () => {
 	it('requires an option factory function', () => {

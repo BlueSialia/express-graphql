@@ -1,10 +1,10 @@
-import { roots, rootValue, schema } from 'examples/schema';
 import express from 'express';
 import { execute, subscribe } from 'graphql';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { createServer } from 'http';
-import { graphqlHTTP } from 'index';
 import { WebSocketServer } from 'ws';
+import { roots, rootValue, schema } from '../examples/schema.js';
+import { graphqlHTTP } from '../index.js';
 
 const PORT = 12000;
 const subscriptionUrl = `ws://localhost:${PORT}/subscriptions`;

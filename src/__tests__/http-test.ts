@@ -1,27 +1,24 @@
-import zlib from 'zlib';
-
-import express, { Request, Response } from 'express';
-import supertest from 'supertest';
 import bodyParser from 'body-parser';
-
-import type { ASTVisitor, ValidationContext } from 'graphql';
-import multer from 'multer'; // cSpell:words mimetype originalname
 import { expect } from 'chai';
-import { describe, it } from 'mocha';
+import express, { Request, Response } from 'express';
+import type { ASTVisitor, ValidationContext } from 'graphql';
 import {
-	Source,
+	buildSchema,
+	execute,
 	GraphQLError,
-	GraphQLString,
 	GraphQLNonNull,
 	GraphQLObjectType,
 	GraphQLSchema,
+	GraphQLString,
 	parse,
-	execute,
+	Source,
 	validate,
-	buildSchema,
 } from 'graphql';
-
-import { graphqlHTTP } from '../index';
+import { describe, it } from 'mocha';
+import multer from 'multer'; // cSpell:words mimetype originalname
+import supertest from 'supertest';
+import zlib from 'zlib';
+import { graphqlHTTP } from '../index.js';
 
 type Middleware = (req: Request, res: Response, next: () => void) => unknown;
 type Server = () => {
@@ -1445,7 +1442,7 @@ function runTests(server: Server) {
 				.request()
 				.post(urlString())
 				.set('Content-Type', 'application/json')
-				.send(`{ "query": "{ ${new Array(102400).fill('test').join('')} }" }`);
+				.send(`{ "query": "{ ${new Array(30000).fill('test').join('')} }" }`);
 
 			expect(response.status).to.equal(413);
 			expect(JSON.parse(response.text)).to.deep.equal({

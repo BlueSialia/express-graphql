@@ -1,4 +1,4 @@
-import type { CustomGraphiQLProps, GraphQLParams } from 'interfaces';
+import type { CustomGraphiQLProps, GraphQLParams } from './interfaces.js';
 
 /**
  * Ensures string values are safe to be used within a <script> tag.

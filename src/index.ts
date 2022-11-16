@@ -21,11 +21,11 @@ import type {
 	ProvidedOptions,
 	UsableOptions,
 	UserOptions,
-} from 'interfaces';
-import { parseBody } from 'parseBody';
-import { renderGraphiQL } from 'renderGraphiQL';
+} from './interfaces.js';
+import { parseBody } from './parseBody.js';
+import { renderGraphiQL } from './renderGraphiQL.js';
 
-export * from 'interfaces';
+export * from './interfaces.js';
 
 /**
  * Middleware for express; takes an options object or function as input to

@@ -1,6 +1,6 @@
 import express from 'express';
 import { buildSchema } from 'graphql';
-import { graphqlHTTP } from 'index';
+import { graphqlHTTP } from '../index.js';
 
 const PORT = 12000;
 
